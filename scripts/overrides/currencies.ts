@@ -165,6 +165,23 @@ export const CURRENCY_FR: Readonly<Record<string, string>> = {
   ZAR: 'rand sud-africain',
   ZMW: 'kwacha zambien',
   ZWB: 'dollar zimbabwéen',
+  ZWG: 'ZiG zimbabwéen',
+};
+
+/**
+ * Monnaies fausses ou périmées à la source, corrigées à la main.
+ *
+ * Le Zimbabwe y traîne encore les neuf devises du régime multi-devises de
+ * 2009-2019 (dont le yen et l'euro), abandonné depuis. Le pays émet le ZiG
+ * (Zimbabwe Gold, code ISO 4217 ZWG) depuis avril 2024.
+ *
+ * Cuba y garde le peso convertible, supprimé en 2021.
+ */
+export const CURRENCY_OVERRIDES: Readonly<
+  Record<string, readonly { code: string; name: string; symbol: string | null }[]>
+> = {
+  ZWE: [{ code: 'ZWG', name: 'Zimbabwe Gold', symbol: 'ZiG' }],
+  CUB: [{ code: 'CUP', name: 'Cuban peso', symbol: '$' }],
 };
 
 /** La source donne quelques noms anglais tronqués ou en minuscule. */
@@ -175,4 +192,26 @@ export const CURRENCY_EN_OVERRIDES: Readonly<Record<string, string>> = {
   MKD: 'Macedonian denar',
   NOK: 'Norwegian krone',
   ZWB: 'Zimbabwean dollar',
+};
+
+/**
+ * Genre du nom générique de chaque monnaie, pour composer « **le** sol
+ * péruvien », « **la** livre sterling », « **l'**euro ». On n'a besoin que du
+ * premier mot : le reste est un adjectif qui s'accorde déjà dans la table
+ * ci-dessus. Le build échoue si un mot générique manque ici.
+ */
+export const CURRENCY_GENDER: Readonly<Record<string, 'm' | 'f'>> = {
+  afghani: 'm', ariary: 'm', baht: 'm', balboa: 'm', birr: 'm', boliviano: 'm',
+  bolívar: 'm', cedi: 'm', colón: 'm', couronne: 'f', córdoba: 'm',
+  dalasi: 'm', denar: 'm', dinar: 'm', dirham: 'm', dobra: 'm', dollar: 'm',
+  dong: 'm', dram: 'm', escudo: 'm', euro: 'm', forint: 'm', franc: 'm',
+  gourde: 'f', guaraní: 'm', hryvnia: 'f', kina: 'm', kip: 'm', kwacha: 'm',
+  kwanza: 'm', kyat: 'm', lari: 'm', lek: 'm', lempira: 'm', leone: 'm',
+  leu: 'm', lilangeni: 'm', livre: 'f', loti: 'm', manat: 'm', mark: 'm',
+  metical: 'm', naira: 'm', nakfa: 'm', ngultrum: 'm', nouveau: 'm',
+  ouguiya: 'm', 'pa’anga': 'm', peso: 'm', pula: 'm', quetzal: 'm', rand: 'm',
+  real: 'm', rial: 'm', riel: 'm', ringgit: 'm', riyal: 'm', rouble: 'm',
+  roupie: 'f', rufiyaa: 'f', shilling: 'm', sol: 'm', som: 'm', somoni: 'm',
+  sum: 'm', taka: 'm', tala: 'm', tenge: 'm', tugrik: 'm', vatu: 'm',
+  won: 'm', yen: 'm', yuan: 'm', zloty: 'm', ZiG: 'm',
 };

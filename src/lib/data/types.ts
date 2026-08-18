@@ -16,6 +16,8 @@ export interface Currency {
   /** Code ISO 4217. */
   readonly code: string;
   readonly name: Localized;
+  /** « le sol péruvien », « l'euro », « the Peruvian sol ». */
+  readonly nameWithArticle: Localized;
   readonly symbol: string | null;
 }
 

@@ -30,7 +30,12 @@ import {
 } from './overrides/geography.js';
 import { NAME_EN_OVERRIDES, NAME_FR_OVERRIDES } from './overrides/names.js';
 import { CAPITAL_FR_OVERRIDES } from './overrides/capitals.js';
-import { CURRENCY_EN_OVERRIDES, CURRENCY_FR } from './overrides/currencies.js';
+import {
+  CURRENCY_EN_OVERRIDES,
+  CURRENCY_FR,
+  CURRENCY_GENDER,
+  CURRENCY_OVERRIDES,
+} from './overrides/currencies.js';
 import { TIER_BY_ISO, TIER_DUPLICATES } from './overrides/tiers.js';
 import { ARTICLE_FR, ENGLISH_THE } from './overrides/articles.js';
 
@@ -163,13 +168,36 @@ function withArticle(iso3: Iso3, name: Localized): Localized {
   return { fr: fr(composed), en: ENGLISH_THE.has(iso3) ? `the ${name.en}` : name.en };
 }
 
+/** « le sol péruvien », « la livre sterling », « l'euro ». */
+function currencyWithArticle(name: string, code: string): string {
+  const head = name.split(' ')[0] ?? '';
+  const gender = CURRENCY_GENDER[head];
+  if (!gender) {
+    problems.push(`Genre inconnu pour la monnaie ${code} (mot générique « ${head} »)`);
+    return name;
+  }
+  // Élision devant voyelle et h muet : l'euro, l'hryvnia.
+  if (/^[aeiouyàâéèêëîïôöùûüh]/i.test(name)) return `l\u2019${name}`;
+  return `${gender === 'f' ? 'la' : 'le'} ${name}`;
+}
+
 function buildCurrencies(raw: RawCountry): Currency[] {
-  return Object.entries(raw.currencies ?? []).map(([code, value]) => {
+  const override = CURRENCY_OVERRIDES[raw.cca3];
+  const source: [string, { name: string; symbol?: string }][] = override
+    ? override.map((c) => [c.code, { name: c.name, symbol: c.symbol ?? undefined }])
+    : Object.entries(raw.currencies ?? {});
+  return source.map(([code, value]) => {
     const frName = CURRENCY_FR[code];
     if (!frName) problems.push(`Monnaie sans nom français : ${code} (${raw.cca3})`);
+    const nameFr = fr(frName ?? code);
+    const nameEn = CURRENCY_EN_OVERRIDES[code] ?? value.name;
     return {
       code,
-      name: { fr: fr(frName ?? code), en: CURRENCY_EN_OVERRIDES[code] ?? value.name },
+      name: { fr: nameFr, en: nameEn },
+      nameWithArticle: {
+        fr: frName ? currencyWithArticle(nameFr, code) : nameFr,
+        en: `the ${nameEn}`,
+      },
       symbol: value.symbol ?? null,
     };
   });
