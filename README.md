@@ -155,4 +155,9 @@ src/App.svelte            écran principal
 - [x] **Phase 3 — Modes** : drapeau, capitale, monnaie, choix du mode sur l'accueil.
 - [ ] Phase 4 — Bascule FR/EN
 - [ ] Phase 5 — Direction artistique, animations, meilleurs scores, mobile, accessibilité
-- [ ] Phase 6 — Sound design
+- [ ] Phase 6 — Sound design : retours de jeu uniquement (tap, bonne réponse,
+      erreur, révélation, fin de manche). Sons d'interface **synthétisés** via
+      l'API Web Audio — zéro octet, aucune licence à tracer — et un ou deux
+      fichiers courts sous licence CC0 pour les moments forts. Coupure du son
+      persistée, et pas un bruit avant le premier geste du joueur (iOS refuse
+      d'ouvrir le contexte audio sans interaction).
