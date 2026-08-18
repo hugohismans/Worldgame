@@ -92,6 +92,15 @@ Le chemin de base `/Worldgame/` est appliqué au build et à `npm run preview`,
 mais pas à `npm run dev`. Il est à changer dans `vite.config.ts` si le dépôt est
 renommé ou si un domaine personnalisé est configuré.
 
+## Contraintes de conception
+
+- **Mobile d'abord.** Les écrans sont pensés en portrait puis élargis, jamais
+  l'inverse. Conséquences déjà appliquées : cadrage du globe calculé depuis le
+  ratio de l'écran, `touch-action: none` sur le canvas, aucune information
+  disponible seulement au survol (il n'y a pas de survol sur un téléphone).
+- Le globe est le héros de l'écran : en portrait il occupe la bande centrale,
+  l'interface se loge dans les marges haute et basse.
+
 ## Architecture
 
 ```
