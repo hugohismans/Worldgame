@@ -99,6 +99,11 @@
       .polygonSideColor(() => 'rgba(0, 0, 0, 0)')
       .polygonStrokeColor(() => GLOBE_COLORS.stroke)
       .polygonsTransitionDuration(0)
+      // globe.gl affiche par défaut une infobulle avec la propriété `name` de
+      // la donnée survolée. Nommer le pays donnerait la réponse — et sur un
+      // marqueur, `name` étant un objet {fr, en}, l'infobulle affichait
+      // « [object Object] ».
+      .polygonLabel(() => '')
       .onPolygonHover((polygon) => setHover(polygon === null ? null : isoOf(polygon)))
       .onPolygonClick((polygon) => select(isoOf(polygon)))
       // Les pays absents de la géométrie 110m (Monaco, Malte, Singapour…)
@@ -110,6 +115,7 @@
       .pointRadius(0.55)
       .pointColor(pointColor)
       .pointsMerge(false)
+      .pointLabel(() => '')
       .onPointHover((point) => setHover(point === null ? null : (point as Country).iso3))
       .onPointClick((point) => select((point as Country).iso3));
 
