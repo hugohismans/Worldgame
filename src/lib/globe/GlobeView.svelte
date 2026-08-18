@@ -24,6 +24,15 @@
   let globe: GlobeInstance | undefined;
   let hovered: Iso3 | null = null;
 
+  /**
+   * Le survol n'a de sens qu'à la souris. Au doigt, il n'existe pas
+   * d'événement de sortie : faire tourner le globe colorerait chaque pays qui
+   * passe sous le doigt, et le dernier resterait allumé une fois le geste
+   * terminé. On part de ce que dit l'appareil, puis on suit le type de
+   * pointeur réellement utilisé — un portable tactile fait les deux.
+   */
+  let hoverFromMouse = !window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
   const isoOf = (feature: object): Iso3 => (feature as CountryFeature).properties.iso3;
 
   function colorOf(iso3: Iso3, base: string, hoverColor: string): string {
@@ -31,7 +40,7 @@
     if (highlight) return HIGHLIGHT_COLORS[highlight];
     // Pendant la révélation, le globe ne réagit plus au survol : un pays
     // simplement pointé ne doit pas se confondre avec une réponse.
-    if (selectable && iso3 === hovered) return hoverColor;
+    if (selectable && hoverFromMouse && iso3 === hovered) return hoverColor;
     return base;
   }
 
@@ -55,6 +64,14 @@
     hovered = iso3;
     repaint();
     onhover?.(iso3 === null ? null : (countryOf(iso3) ?? null));
+  }
+
+  function trackPointerType(event: PointerEvent): void {
+    const isMouse = event.pointerType === 'mouse';
+    if (isMouse === hoverFromMouse) return;
+    hoverFromMouse = isMouse;
+    if (!isMouse) hovered = null;
+    repaint();
   }
 
   function select(iso3: Iso3): void {
@@ -126,6 +143,9 @@
     instance.pointOfView({ lat: 20, lng: 5, altitude: fittingAltitude(container.clientWidth, container.clientHeight, 50) });
     globe = instance;
 
+    container.addEventListener('pointerdown', trackPointerType, { passive: true });
+    container.addEventListener('pointermove', trackPointerType, { passive: true });
+
     const resize = new ResizeObserver(([entry]) => {
       if (entry) instance.width(entry.contentRect.width).height(entry.contentRect.height);
     });
@@ -138,6 +158,8 @@
     orientation.addEventListener('change', frameGlobe);
 
     return () => {
+      container.removeEventListener('pointerdown', trackPointerType);
+      container.removeEventListener('pointermove', trackPointerType);
       orientation.removeEventListener('change', frameGlobe);
       resize.disconnect();
       instance._destructor();
