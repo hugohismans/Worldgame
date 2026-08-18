@@ -13,6 +13,7 @@ export const NAME_FR_OVERRIDES: Readonly<Record<Iso3, string>> = {
   ESH: 'Sahara occidental', // source : majuscule fautive
   NGA: 'Nigéria',
   PLW: 'Palaos', // source : « Palaos (Palau) »
+  MUS: 'Maurice', // source : « Île Maurice »
   TLS: 'Timor oriental',
   SWZ: 'Eswatini',
   MKD: 'Macédoine du Nord',

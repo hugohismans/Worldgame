@@ -13,7 +13,15 @@ import { mkdir, readFile, writeFile, copyFile, rm, readdir } from 'node:fs/promi
 import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Country, CountryFeature, Currency, Iso3, RegionId, Tier } from '../src/lib/data/types.js';
+import type {
+  Country,
+  CountryFeature,
+  Currency,
+  Iso3,
+  Localized,
+  RegionId,
+  Tier,
+} from '../src/lib/data/types.js';
 import {
   EXTRA_ENTITIES,
   ISO_ALIASES,
@@ -24,6 +32,7 @@ import { NAME_EN_OVERRIDES, NAME_FR_OVERRIDES } from './overrides/names.js';
 import { CAPITAL_FR_OVERRIDES } from './overrides/capitals.js';
 import { CURRENCY_EN_OVERRIDES, CURRENCY_FR } from './overrides/currencies.js';
 import { TIER_BY_ISO, TIER_DUPLICATES } from './overrides/tiers.js';
+import { ARTICLE_FR, ENGLISH_THE } from './overrides/articles.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CACHE = resolve(ROOT, '.cache');
@@ -87,6 +96,9 @@ async function fetchCached(name: string, url: string): Promise<string> {
 
 const round = (n: number): number => Number(n.toFixed(COORD_PRECISION));
 
+/** Apostrophe typographique : « l'Iran » et « Côte d'Ivoire » s'écrivent avec ’. */
+const fr = (text: string): string => text.replace(/'/g, '\u2019');
+
 function roundCoords(input: unknown): unknown {
   if (typeof input === 'number') return round(input);
   if (Array.isArray(input)) return input.map(roundCoords);
@@ -135,13 +147,29 @@ function polygonCentroid(geometry: CountryFeature['geometry']): [number, number]
   return [x / (3 * a), y / (3 * a)];
 }
 
+/** « le Pérou », « l'Iran », « les Pays-Bas », « Cuba ». */
+function withArticle(iso3: Iso3, name: Localized): Localized {
+  const article = ARTICLE_FR[iso3];
+  if (article === undefined) {
+    problems.push(`Article français manquant : ${iso3} (« ${name.fr} »)`);
+  }
+  const withoutArticle = name.fr;
+  const composed =
+    article === undefined || article === ''
+      ? withoutArticle
+      : article === "l'"
+        ? `l'${withoutArticle}`
+        : `${article} ${withoutArticle}`;
+  return { fr: fr(composed), en: ENGLISH_THE.has(iso3) ? `the ${name.en}` : name.en };
+}
+
 function buildCurrencies(raw: RawCountry): Currency[] {
   return Object.entries(raw.currencies ?? []).map(([code, value]) => {
-    const fr = CURRENCY_FR[code];
-    if (!fr) problems.push(`Monnaie sans nom français : ${code} (${raw.cca3})`);
+    const frName = CURRENCY_FR[code];
+    if (!frName) problems.push(`Monnaie sans nom français : ${code} (${raw.cca3})`);
     return {
       code,
-      name: { fr: fr ?? code, en: CURRENCY_EN_OVERRIDES[code] ?? value.name },
+      name: { fr: fr(frName ?? code), en: CURRENCY_EN_OVERRIDES[code] ?? value.name },
       symbol: value.symbol ?? null,
     };
   });
@@ -201,6 +229,7 @@ async function main(): Promise<void> {
         iso3,
         iso2: extra.iso2,
         name: extra.name,
+        nameWithArticle: withArticle(iso3, extra.name),
         capital: extra.capital,
         currencies: [],
         region: extra.region,
@@ -225,7 +254,7 @@ async function main(): Promise<void> {
 
     const capitalEn = raw.capital?.[0] ?? null;
     const capital = capitalEn
-      ? { fr: CAPITAL_FR_OVERRIDES[iso3] ?? capitalEn, en: capitalEn }
+      ? { fr: fr(CAPITAL_FR_OVERRIDES[iso3] ?? capitalEn), en: capitalEn }
       : null;
 
     const playable = raw.independent === true && raw.unMember === true;
@@ -254,10 +283,16 @@ async function main(): Promise<void> {
       }
     }
 
+    const name: Localized = {
+      fr: fr(nameFr ?? raw.name.common),
+      en: NAME_EN_OVERRIDES[iso3] ?? raw.name.common,
+    };
+
     countries.push({
       iso3,
       iso2: raw.cca2.toLowerCase(),
-      name: { fr: nameFr ?? raw.name.common, en: NAME_EN_OVERRIDES[iso3] ?? raw.name.common },
+      name,
+      nameWithArticle: withArticle(iso3, name),
       capital,
       currencies: buildCurrencies(raw),
       region,

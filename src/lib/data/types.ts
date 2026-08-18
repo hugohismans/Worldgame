@@ -31,6 +31,11 @@ export interface Country {
   /** Code ISO 3166-1 alpha-2, minuscule — sert aussi de nom de fichier drapeau. */
   readonly iso2: string;
   readonly name: Localized;
+  /**
+   * Le nom tel qu'il s'emploie dans une phrase : « le Pérou », « l'Iran »,
+   * « the Netherlands ». Sert aux énoncés, jamais aux listes.
+   */
+  readonly nameWithArticle: Localized;
   readonly capital: Localized | null;
   readonly currencies: readonly Currency[];
   readonly region: RegionId;
