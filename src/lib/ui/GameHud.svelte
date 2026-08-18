@@ -2,6 +2,7 @@
   import { countryOf } from '../data/countries.js';
   import { flagUrl } from '../data/flags.js';
   import { ACCEPT_ANY_COUNTRY_OF_THE_ZONE } from '../game/modes/currency.js';
+  import { i18n } from '../i18n/i18n.svelte.js';
   import type { Question } from '../game/types.js';
 
   interface Props {
@@ -24,7 +25,7 @@
 
 <div class="hud">
   <header>
-    <button type="button" class="quit" onclick={onquit} aria-label="Quitter la manche">✕</button>
+    <button type="button" class="quit" onclick={onquit} aria-label={i18n.t.quitRound}>✕</button>
     <p class="progress"><strong>{score}</strong> / {total}</p>
   </header>
 
@@ -36,7 +37,7 @@
     aria-valuenow={position}
     aria-valuemin={1}
     aria-valuemax={total}
-    aria-label="Progression de la manche"
+    aria-label={i18n.t.roundProgress}
   >
     <span class="fill" style="--fill: {(position / total) * 100}%"></span>
   </div>
@@ -46,17 +47,17 @@
       <!-- Le drapeau seul, sans texte : le nommer donnerait la réponse. -->
       <figure class="flag" aria-live="polite">
         <img src={flagUrl(question.clue.iso2)} alt="" width="120" height="90" />
-        <figcaption class="visually-hidden">Drapeau à identifier</figcaption>
+        <figcaption class="visually-hidden">{i18n.t.flagToIdentify}</figcaption>
       </figure>
     {:else}
       <p class="clue" aria-live="polite">
         {#if question.clue.kind === 'name'}
-          Trouve <strong>{question.clue.name.fr}</strong>
+          {i18n.t.cluePrefix} <strong>{i18n.of(question.clue.name)}</strong>
         {:else if question.clue.kind === 'capital'}
-          Trouve le pays dont la capitale est <strong>{question.clue.capital.fr}</strong>
+          {i18n.t.clueCapital} <strong>{i18n.of(question.clue.capital)}</strong>
         {:else}
-          Trouve {ACCEPT_ANY_COUNTRY_OF_THE_ZONE ? 'un' : 'le'} pays dont la monnaie est
-          <strong>{question.clue.currency.fr}</strong>
+          {ACCEPT_ANY_COUNTRY_OF_THE_ZONE ? i18n.t.clueCurrencyAny : i18n.t.clueCurrencyOne}
+          <strong>{i18n.of(question.clue.currency)}</strong>
         {/if}
       </p>
     {/if}
@@ -65,19 +66,19 @@
   <div class="feedback-slot">
     {#if reveal}
       {#if reveal.correct}
-        <p class="feedback feedback--correct" aria-live="assertive">Bravo</p>
+        <p class="feedback feedback--correct" aria-live="assertive">{i18n.t.correct}</p>
       {:else}
         <div class="feedback feedback--wrong" aria-live="assertive">
           <p>
-            {#if picked}Tu as cliqué sur {picked.nameWithArticle.fr}.{/if}
+            {#if picked}{i18n.t.youPicked(i18n.of(picked.nameWithArticle))}{/if}
             {#if question.accepted.length > 1}
               <!-- Nommer un seul pays laisserait croire qu'il était le seul bon. -->
-              N’importe quel pays en or convenait.
-            {:else}
-              C’était {expected?.nameWithArticle.fr}.
+              {i18n.t.anyGoldCountry}
+            {:else if expected}
+              {i18n.t.itWas(i18n.of(expected.nameWithArticle))}
             {/if}
           </p>
-          <button type="button" class="next" onclick={onnext}>Continuer</button>
+          <button type="button" class="next" onclick={onnext}>{i18n.t.next}</button>
         </div>
       {/if}
     {/if}

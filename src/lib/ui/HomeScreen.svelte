@@ -1,6 +1,8 @@
 <script lang="ts">
   import { countries } from '../data/countries.js';
   import { REGIONS, TIERS, type RegionId, type Tier } from '../data/types.js';
+  import { i18n } from '../i18n/i18n.svelte.js';
+  import { LANGS, LANG_LABELS } from '../i18n/language.js';
   import { buildPool } from '../game/pool.js';
   import { MODES } from '../game/modes/index.js';
   import { distinctClues } from '../game/round.js';
@@ -12,29 +14,29 @@
 
   const { onstart }: Props = $props();
 
-  const MODE_LABELS: Record<ModeId, { name: string; hint: string }> = {
-    name: { name: 'Nom', hint: 'Trouve le Pérou' },
-    flag: { name: 'Drapeau', hint: 'Le drapeau seul' },
-    capital: { name: 'Capitale', hint: 'Sa capitale est Lima' },
-    currency: { name: 'Monnaie', hint: 'Sa monnaie est le sol' },
-  };
+  const modeLabels = $derived<Record<ModeId, { name: string; hint: string }>>({
+    name: { name: i18n.t.modeName, hint: i18n.t.modeNameHint },
+    flag: { name: i18n.t.modeFlag, hint: i18n.t.modeFlagHint },
+    capital: { name: i18n.t.modeCapital, hint: i18n.t.modeCapitalHint },
+    currency: { name: i18n.t.modeCurrency, hint: i18n.t.modeCurrencyHint },
+  });
 
-  const TIER_LABELS: Record<Tier | 'all', string> = {
-    all: 'Le monde entier',
-    common: 'Grand public',
-    uncommon: 'Hors-piste',
-    rare: 'Terra incognita',
-  };
+  const tierLabels = $derived<Record<Tier | 'all', string>>({
+    all: i18n.t.tierAll,
+    common: i18n.t.tierCommon,
+    uncommon: i18n.t.tierUncommon,
+    rare: i18n.t.tierRare,
+  });
 
-  const REGION_LABELS: Record<RegionId | 'all', string> = {
-    all: 'Tous les continents',
-    africa: 'Afrique',
-    americas: 'Amériques',
-    asia: 'Asie',
-    europe: 'Europe',
-    oceania: 'Océanie',
-    antarctic: 'Antarctique',
-  };
+  const regionLabels = $derived<Record<RegionId | 'all', string>>({
+    all: i18n.t.regionAll,
+    africa: i18n.t.regionAfrica,
+    americas: i18n.t.regionAmericas,
+    asia: i18n.t.regionAsia,
+    europe: i18n.t.regionEurope,
+    oceania: i18n.t.regionOceania,
+    antarctic: i18n.t.regionAntarctic,
+  });
 
   let mode = $state<ModeId>('name');
   let length = $state<RoundLength>(10);
@@ -54,13 +56,26 @@
 
 <section class="home">
   <header>
-    <h1>Worldgame</h1>
-    <p class="tagline">Trouve le pays sur le globe.</p>
+    <div class="langs">
+      {#each LANGS as value (value)}
+        <button
+          type="button"
+          class="lang"
+          aria-pressed={i18n.lang === value}
+          onclick={() => i18n.set(value)}
+          title={LANG_LABELS[value]}>{value.toUpperCase()}</button
+        >
+      {/each}
+    </div>
+    <div class="titles">
+      <h1>Worldgame</h1>
+      <p class="tagline">{i18n.t.tagline}</p>
+    </div>
   </header>
 
   <div class="choices">
     <fieldset>
-      <legend>Indice</legend>
+      <legend>{i18n.t.clueSection}</legend>
       <div class="chips chips--wrap">
         {#each MODE_IDS as value (value)}
           <button
@@ -68,15 +83,15 @@
             class="chip"
             aria-pressed={mode === value}
             onclick={() => (mode = value)}
-            title={MODE_LABELS[value].hint}>{MODE_LABELS[value].name}</button
+            title={modeLabels[value].hint}>{modeLabels[value].name}</button
           >
         {/each}
       </div>
-      <p class="hint">{MODE_LABELS[mode].hint}</p>
+      <p class="hint">{modeLabels[mode].hint}</p>
     </fieldset>
 
     <fieldset>
-      <legend>Questions</legend>
+      <legend>{i18n.t.lengthSection}</legend>
       <div class="chips">
         {#each ROUND_LENGTHS as value (value)}
           <button
@@ -90,24 +105,24 @@
     </fieldset>
 
     <fieldset>
-      <legend>Pays</legend>
+      <legend>{i18n.t.poolSection}</legend>
       <div class="chips chips--wrap">
         {#each ['all', ...TIERS] as const as value (value)}
           <button
             type="button"
             class="chip"
             aria-pressed={tier === value}
-            onclick={() => (tier = value)}>{TIER_LABELS[value]}</button
+            onclick={() => (tier = value)}>{tierLabels[value]}</button
           >
         {/each}
       </div>
     </fieldset>
 
     <fieldset>
-      <legend>Zone</legend>
-      <select bind:value={region} aria-label="Continent">
+      <legend>{i18n.t.regionSection}</legend>
+      <select bind:value={region} aria-label={i18n.t.regionSelectLabel}>
         {#each regionOptions as value (value)}
-          <option {value}>{REGION_LABELS[value]}</option>
+          <option {value}>{regionLabels[value]}</option>
         {/each}
       </select>
     </fieldset>
@@ -116,18 +131,18 @@
   <footer>
     <p class="count" aria-live="polite">
       {#if available === 0}
-        Aucune question possible dans cette sélection.
+        {i18n.t.poolEmpty}
       {:else if actualLength < length}
-        {available} questions disponibles : la manche en comptera {actualLength}.
+        {i18n.t.poolShort(available, actualLength)}
       {:else}
-        {available} questions possibles.
+        {i18n.t.poolCount(available)}
       {/if}
     </p>
     <button
       type="button"
       class="play"
       disabled={available === 0}
-      onclick={() => onstart({ mode, length, filter })}>Jouer</button
+      onclick={() => onstart({ mode, length, filter })}>{i18n.t.play}</button
     >
   </footer>
 </section>
@@ -148,8 +163,39 @@
     );
   }
 
+  header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* Le sélecteur passe au-dessus du titre : à côté, « Worldgame » le poussait
+     hors de l'écran sur un téléphone. */
+  .langs {
+    display: flex;
+    gap: 0.25rem;
+    align-self: end;
+  }
+
+  .lang {
+    min-inline-size: 44px;
+    min-block-size: 44px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-dim);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      border-color: var(--accent);
+      color: var(--accent-text);
+    }
+  }
+
   h1 {
-    font-size: clamp(2rem, 12vw, 3rem);
+    font-size: clamp(1.9rem, 10vw, 2.75rem);
     font-weight: 700;
     letter-spacing: -0.02em;
   }

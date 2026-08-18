@@ -1,5 +1,6 @@
 <script lang="ts">
   import { countryOf } from '../data/countries.js';
+  import { i18n } from '../i18n/i18n.svelte.js';
   import type { RoundSummary } from '../game/types.js';
 
   interface Props {
@@ -15,37 +16,37 @@
 
 <section class="result">
   <header>
-    <p class="label">Manche terminée</p>
+    <p class="label">{i18n.t.roundOver}</p>
     <p class="score"><strong>{summary.score}</strong> / {summary.total}</p>
     <dl class="stats">
-      <div><dt>Précision</dt><dd>{percent}%</dd></div>
-      <div><dt>Meilleure série</dt><dd>{summary.bestStreak}</dd></div>
+      <div><dt>{i18n.t.accuracy}</dt><dd>{percent}%</dd></div>
+      <div><dt>{i18n.t.bestStreak}</dt><dd>{summary.bestStreak}</dd></div>
     </dl>
   </header>
 
   {#if summary.missed.length > 0}
     <div class="missed">
-      <h2>À revoir</h2>
+      <h2>{i18n.t.toReview}</h2>
       <ul>
         {#each summary.missed as answer (answer.question.answer)}
           {@const expected = countryOf(answer.question.answer)}
           {@const picked = answer.picked ? countryOf(answer.picked) : undefined}
           <li>
-            <span class="expected">{expected?.name.fr}</span>
+            <span class="expected">{expected ? i18n.of(expected.name) : ''}</span>
             {#if picked && picked.iso3 !== expected?.iso3}
-              <span class="picked">tu as répondu {picked.name.fr}</span>
+              <span class="picked">{i18n.t.answered(i18n.of(picked.name))}</span>
             {/if}
           </li>
         {/each}
       </ul>
     </div>
   {:else}
-    <p class="perfect">Sans faute.</p>
+    <p class="perfect">{i18n.t.flawless}</p>
   {/if}
 
   <footer>
-    <button type="button" class="primary" onclick={onreplay}>Rejouer</button>
-    <button type="button" onclick={onhome}>Changer de réglages</button>
+    <button type="button" class="primary" onclick={onreplay}>{i18n.t.playAgain}</button>
+    <button type="button" onclick={onhome}>{i18n.t.changeSettings}</button>
   </footer>
 </section>
 
