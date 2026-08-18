@@ -2,7 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { countries } from '../data/countries.js';
 import type { Country } from '../data/types.js';
 import { buildPool } from './pool.js';
-import { createRound, currentQuestion, isOver, recordAnswer, shuffle, summary } from './round.js';
+import {
+  createRound,
+  currentQuestion,
+  distinctClues,
+  isOver,
+  recordAnswer,
+  shuffle,
+  summary,
+} from './round.js';
+import { MODES } from './modes/index.js';
 import { nameMode } from './modes/name.js';
 import type { Round } from './types.js';
 
@@ -148,5 +157,66 @@ describe('summary', () => {
 
   it('donne une précision nulle sur une manche vierge', () => {
     expect(summary(createRound(pool, nameMode, 10, seeded(1))).accuracy).toBe(0);
+  });
+});
+
+describe('modes', () => {
+  const world = buildPool(countries, nameMode, { tier: 'all', region: 'all' });
+
+  it('propose un drapeau pour chaque pays jouable', () => {
+    const eligible = world.filter((c) => MODES.flag.eligible(c));
+    expect(eligible).toHaveLength(194);
+  });
+
+  it('demande une capitale connue', () => {
+    expect(world.every((c) => MODES.capital.eligible(c))).toBe(true);
+    const question = MODES.capital.question(world.find((c) => c.iso3 === 'PER') as Country, world);
+    expect(question.clue).toEqual({ kind: 'capital', capital: { fr: 'Lima', en: 'Lima' } });
+  });
+
+  it('accepte tout pays de la zone euro', () => {
+    const france = world.find((c) => c.iso3 === 'FRA') as Country;
+    const question = MODES.currency.question(france, world);
+    expect(question.answer).toBe('FRA');
+    expect(question.accepted).toContain('DEU');
+    expect(question.accepted).toContain('IRL');
+    expect(question.accepted).not.toContain('CHE');
+    expect(question.accepted.length).toBeGreaterThan(20);
+  });
+
+  it('accepte tout pays de la zone franc CFA', () => {
+    const senegal = world.find((c) => c.iso3 === 'SEN') as Country;
+    const question = MODES.currency.question(senegal, world);
+    expect(question.accepted).toContain('CIV');
+    expect(question.accepted).toContain('MLI');
+    // Les deux francs CFA sont des monnaies distinctes : la BEAC n'est pas la BCEAO.
+    expect(question.accepted).not.toContain('CMR');
+  });
+
+  it('garde une seule bonne réponse pour une monnaie unique', () => {
+    const japan = world.find((c) => c.iso3 === 'JPN') as Country;
+    // Aucun autre membre de l'ONU n'a le yen pour monnaie nationale.
+    expect(MODES.currency.question(japan, world).accepted).toEqual(['JPN']);
+  });
+
+  it('ne demande pas deux fois la même monnaie dans une manche', () => {
+    const round = createRound(world, MODES.currency, 30, seeded(4), world);
+    const currencies = round.questions.map((q) =>
+      q.clue.kind === 'currency' ? q.clue.currency.fr : '',
+    );
+    expect(new Set(currencies).size).toBe(currencies.length);
+  });
+
+  it('compte les indices distincts, pas les pays', () => {
+    expect(distinctClues(world, MODES.name)).toBe(194);
+    // 194 pays mais moins de monnaies : l'euro et le franc CFA regroupent.
+    expect(distinctClues(world, MODES.currency)).toBeLessThan(194);
+    expect(distinctClues(world, MODES.currency)).toBeGreaterThan(100);
+  });
+
+  it('raccourcit la manche quand les indices distincts manquent', () => {
+    const euroZone = world.filter((c) => c.currencies[0]?.code === 'EUR');
+    const round = createRound(euroZone, MODES.currency, 10, seeded(2), world);
+    expect(round.questions).toHaveLength(1);
   });
 });

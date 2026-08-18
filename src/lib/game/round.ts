@@ -15,20 +15,38 @@ export function shuffle<T>(items: readonly T[], random: Random): T[] {
 }
 
 /**
- * Tire les questions d'une manche. Un pays ne sort qu'une fois ; si le pool est
- * plus petit que la longueur demandée, la manche est raccourcie d'autant.
+ * Tire les questions d'une manche. Un pays ne sort qu'une fois, et deux pays
+ * qui donneraient le même indice non plus — vingt-sept pays ont l'euro. Si le
+ * pool ne fournit pas assez d'indices distincts, la manche est raccourcie.
+ *
+ * `world` sert à décider quelles réponses sont acceptées : elle vaut tous les
+ * pays jouables, même quand le pool est restreint à un continent.
  */
 export function createRound(
   pool: readonly Country[],
   mode: GameMode,
   length: number,
   random: Random,
+  world: readonly Country[] = pool,
 ): Round {
-  const picked = shuffle(pool, random).slice(0, Math.max(0, length));
+  const seen = new Set<string>();
+  const picked: Country[] = [];
+  for (const country of shuffle(pool, random)) {
+    if (picked.length >= Math.max(0, length)) break;
+    const key = mode.clueKey?.(country) ?? country.iso3;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    picked.push(country);
+  }
   return {
-    questions: picked.map((country) => mode.question(country, pool)),
+    questions: picked.map((country) => mode.question(country, world)),
     answers: [],
   };
+}
+
+/** Nombre de questions réellement disponibles dans un pool, indices distincts. */
+export function distinctClues(pool: readonly Country[], mode: GameMode): number {
+  return new Set(pool.map((country) => mode.clueKey?.(country) ?? country.iso3)).size;
 }
 
 export function currentQuestion(round: Round): Question | undefined {

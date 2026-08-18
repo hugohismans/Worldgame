@@ -1,13 +1,19 @@
 import type { Country, Iso3, Localized, RegionId, Tier } from '../data/types.js';
 
 /** Un mode de jeu = une façon de poser la question. */
-export type ModeId = 'name';
+export const MODE_IDS = ['name', 'flag', 'capital', 'currency'] as const;
+export type ModeId = (typeof MODE_IDS)[number];
 
 /**
  * L'indice affiché au joueur. Il porte des valeurs déjà traduites plutôt que
  * du texte figé : c'est la vue qui choisit la langue, pas le moteur.
  */
-export type Clue = { readonly kind: 'name'; readonly name: Localized };
+export type Clue =
+  | { readonly kind: 'name'; readonly name: Localized }
+  /** Le drapeau seul, sans texte : `iso2` désigne le fichier SVG local. */
+  | { readonly kind: 'flag'; readonly iso2: string }
+  | { readonly kind: 'capital'; readonly capital: Localized }
+  | { readonly kind: 'currency'; readonly currency: Localized };
 
 export interface Question {
   /** Le pays visé. */
@@ -28,7 +34,18 @@ export interface GameMode {
   readonly id: ModeId;
   /** Un pays sans capitale ou sans monnaie ne peut pas être demandé partout. */
   eligible(country: Country): boolean;
-  question(country: Country, pool: readonly Country[]): Question;
+  /**
+   * `world` est l'ensemble des pays jouables, pas le pool : une réponse reste
+   * juste même si le pays n'était pas tirable (cliquer l'Autriche quand
+   * l'indice est « l'euro » et que le pool est limité à l'Afrique).
+   */
+  question(country: Country, world: readonly Country[]): Question;
+  /**
+   * Deux pays peuvent donner le même indice — vingt-sept pays ont l'euro.
+   * Cette clé évite de poser deux fois la même question dans une manche.
+   * Par défaut, l'ISO du pays.
+   */
+  clueKey?(country: Country): string;
 }
 
 /** Filtre de composition du pool. `'all'` = pas de restriction. */
