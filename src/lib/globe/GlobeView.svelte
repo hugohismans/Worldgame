@@ -52,9 +52,13 @@
       .atmosphereAltitude(0.18)
       .showGraticules(true)
       .polygonsData(countryPolygons as unknown as object[])
-      .polygonAltitude(0.008)
+      .polygonAltitude(0.01)
       .polygonCapColor(capColor)
-      .polygonSideColor(() => GLOBE_COLORS.stroke)
+      // Deux pays voisins partagent exactement les mêmes points de frontière :
+      // leurs parois latérales seraient rigoureusement confondues et le GPU
+      // n'arriverait pas à les départager (scintillement). On les rend
+      // invisibles, la frontière est dessinée par le trait.
+      .polygonSideColor(() => 'rgba(0, 0, 0, 0)')
       .polygonStrokeColor(() => GLOBE_COLORS.stroke)
       .polygonsTransitionDuration(0)
       .onPolygonHover((polygon) => setHover(polygon === null ? null : isoOf(polygon)))
@@ -74,6 +78,20 @@
     (instance.globeMaterial() as unknown as { color: { set(value: string): void } }).color.set(
       GLOBE_COLORS.ocean,
     );
+
+    // Le plan de coupe proche par défaut (0.1) est absurde ici : rien n'est
+    // jamais à moins de 29 unités de la caméra, et cet écart démesuré entre
+    // near et far ruine la précision du tampon de profondeur — d'où le
+    // scintillement des frontières et de la grille (que three-globe pose
+    // exactement sur la sphère).
+    const camera = instance.camera() as unknown as {
+      near: number;
+      far: number;
+      updateProjectionMatrix(): void;
+    };
+    camera.near = 10;
+    camera.far = 1200;
+    camera.updateProjectionMatrix();
     instance.controls().enablePan = false;
     instance.controls().minDistance = 130;
     instance.controls().maxDistance = 600;
