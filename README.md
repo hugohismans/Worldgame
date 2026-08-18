@@ -119,6 +119,26 @@ liste des réponses acceptées. Un mode tient donc dans un fichier.
 Rien d'autre à toucher : le tirage, le score, les séries et l'écran de fin
 sont communs à tous les modes.
 
+## Langues
+
+Français et anglais, interface **et** données : noms de pays, formes avec
+article, capitales et monnaies existent dans les deux langues depuis la phase 1.
+
+- `src/lib/i18n/dictionary.ts` — les deux dictionnaires. **Le français est la
+  référence** : l'anglais est typé `typeof fr`, donc une clé oubliée, en trop,
+  ou une phrase à trous dont la signature diffère **casse le build**.
+- `src/lib/i18n/language.ts` — `pickLanguage(mémorisé, langues du navigateur)`,
+  pure et testée.
+- `src/lib/i18n/i18n.svelte.ts` — la langue courante. `i18n.t.play` donne une
+  chaîne d'interface, `i18n.of(country.name)` la bonne face d'une donnée.
+
+Au premier lancement la langue du navigateur décide ; ensuite c'est le choix du
+joueur, mémorisé en `localStorage` et reflété par l'attribut `lang` du document.
+
+Ajouter une chaîne : l'écrire dans `fr`, puis dans `en` — le compilateur
+refusera de passer tant que la seconde manque. Ajouter une langue : un
+dictionnaire de plus, un code dans `LANGS`.
+
 ## Contraintes de conception
 
 - **Mobile d'abord.** Les écrans sont pensés en portrait puis élargis, jamais
@@ -153,7 +173,8 @@ src/App.svelte            écran principal
 - [x] **Phase 2 — MVP jouable** : mode « nom », manches de 10/20/30, filtres de
       pool (notoriété et continent), score, feedback, écran de fin.
 - [x] **Phase 3 — Modes** : drapeau, capitale, monnaie, choix du mode sur l'accueil.
-- [ ] Phase 4 — Bascule FR/EN
+- [x] **Phase 4 — Bascule FR/EN** : interface, noms, capitales et monnaies dans
+      les deux langues ; détection au premier lancement, choix mémorisé.
 - [ ] Phase 5 — Direction artistique, animations, meilleurs scores, mobile, accessibilité
 - [ ] Phase 6 — Sound design : retours de jeu uniquement (tap, bonne réponse,
       erreur, révélation, fin de manche). Sons d'interface **synthétisés** via
