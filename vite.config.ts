@@ -7,4 +7,10 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 export default defineConfig(({ command, isPreview }) => ({
   base: command === 'build' || isPreview ? '/Worldgame/' : '/',
   plugins: [svelte()],
+  build: {
+    // Les drapeaux restent des fichiers à part : inlinés en data-URI, les 180
+    // SVG alourdiraient le bundle initial alors qu'une partie n'en affiche
+    // qu'une poignée.
+    assetsInlineLimit: (file: string) => !file.endsWith('.svg'),
+  },
 }))

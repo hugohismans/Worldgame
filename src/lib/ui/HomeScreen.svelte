@@ -2,14 +2,22 @@
   import { countries } from '../data/countries.js';
   import { REGIONS, TIERS, type RegionId, type Tier } from '../data/types.js';
   import { buildPool } from '../game/pool.js';
-  import { nameMode } from '../game/modes/name.js';
-  import { ROUND_LENGTHS, type PoolFilter, type RoundLength } from '../game/types.js';
+  import { MODES } from '../game/modes/index.js';
+  import { distinctClues } from '../game/round.js';
+  import { MODE_IDS, ROUND_LENGTHS, type ModeId, type PoolFilter, type RoundLength } from '../game/types.js';
 
   interface Props {
-    onstart: (config: { length: RoundLength; filter: PoolFilter }) => void;
+    onstart: (config: { mode: ModeId; length: RoundLength; filter: PoolFilter }) => void;
   }
 
   const { onstart }: Props = $props();
+
+  const MODE_LABELS: Record<ModeId, { name: string; hint: string }> = {
+    name: { name: 'Nom', hint: 'Trouve le Pérou' },
+    flag: { name: 'Drapeau', hint: 'Le drapeau seul' },
+    capital: { name: 'Capitale', hint: 'Sa capitale est Lima' },
+    currency: { name: 'Monnaie', hint: 'Sa monnaie est le sol' },
+  };
 
   const TIER_LABELS: Record<Tier | 'all', string> = {
     all: 'Le monde entier',
@@ -28,12 +36,15 @@
     antarctic: 'Antarctique',
   };
 
+  let mode = $state<ModeId>('name');
   let length = $state<RoundLength>(10);
   let tier = $state<Tier | 'all'>('all');
   let region = $state<RegionId | 'all'>('all');
 
   const filter = $derived<PoolFilter>({ tier, region });
-  const available = $derived(buildPool(countries, nameMode, filter).length);
+  // Le mode « monnaie » regroupe les pays d'une même zone : le nombre de
+  // questions possibles n'est pas le nombre de pays.
+  const available = $derived(distinctClues(buildPool(countries, MODES[mode], filter), MODES[mode]));
   // Une manche ne peut pas dépasser le nombre de pays disponibles.
   const actualLength = $derived(Math.min(length, available));
 
@@ -48,6 +59,22 @@
   </header>
 
   <div class="choices">
+    <fieldset>
+      <legend>Indice</legend>
+      <div class="chips chips--wrap">
+        {#each MODE_IDS as value (value)}
+          <button
+            type="button"
+            class="chip"
+            aria-pressed={mode === value}
+            onclick={() => (mode = value)}
+            title={MODE_LABELS[value].hint}>{MODE_LABELS[value].name}</button
+          >
+        {/each}
+      </div>
+      <p class="hint">{MODE_LABELS[mode].hint}</p>
+    </fieldset>
+
     <fieldset>
       <legend>Questions</legend>
       <div class="chips">
@@ -89,18 +116,18 @@
   <footer>
     <p class="count" aria-live="polite">
       {#if available === 0}
-        Aucun pays dans cette sélection.
+        Aucune question possible dans cette sélection.
       {:else if actualLength < length}
-        {available} pays disponibles : la manche en comptera {actualLength}.
+        {available} questions disponibles : la manche en comptera {actualLength}.
       {:else}
-        {available} pays possibles.
+        {available} questions possibles.
       {/if}
     </p>
     <button
       type="button"
       class="play"
       disabled={available === 0}
-      onclick={() => onstart({ length, filter })}>Jouer</button
+      onclick={() => onstart({ mode, length, filter })}>Jouer</button
     >
   </footer>
 </section>
@@ -195,9 +222,15 @@
     gap: 0.75rem;
   }
 
-  .count {
+  .count,
+  .hint {
     color: var(--text-dim);
     font-size: 0.9rem;
+  }
+
+  .hint {
+    padding-block-start: 0.5rem;
+    font-style: italic;
   }
 
   .play {

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { countryOf } from '../data/countries.js';
-  import type { Clue, Question } from '../game/types.js';
+  import { flagUrl } from '../data/flags.js';
+  import { ACCEPT_ANY_COUNTRY_OF_THE_ZONE } from '../game/modes/currency.js';
+  import type { Question } from '../game/types.js';
 
   interface Props {
     question: Question;
@@ -16,7 +18,6 @@
 
   const { question, position, total, score, reveal, onnext, onquit }: Props = $props();
 
-  const clueText = (clue: Clue): string => clue.name.fr;
   const expected = $derived(countryOf(question.answer));
   const picked = $derived(reveal ? countryOf(reveal.picked) : undefined);
 </script>
@@ -41,7 +42,24 @@
   </div>
 
   <div class="clue-slot">
-    <p class="clue" aria-live="polite">Trouve <strong>{clueText(question.clue)}</strong></p>
+    {#if question.clue.kind === 'flag'}
+      <!-- Le drapeau seul, sans texte : le nommer donnerait la réponse. -->
+      <figure class="flag" aria-live="polite">
+        <img src={flagUrl(question.clue.iso2)} alt="" width="120" height="90" />
+        <figcaption class="visually-hidden">Drapeau à identifier</figcaption>
+      </figure>
+    {:else}
+      <p class="clue" aria-live="polite">
+        {#if question.clue.kind === 'name'}
+          Trouve <strong>{question.clue.name.fr}</strong>
+        {:else if question.clue.kind === 'capital'}
+          Trouve le pays dont la capitale est <strong>{question.clue.capital.fr}</strong>
+        {:else}
+          Trouve {ACCEPT_ANY_COUNTRY_OF_THE_ZONE ? 'un' : 'le'} pays dont la monnaie est
+          <strong>{question.clue.currency.fr}</strong>
+        {/if}
+      </p>
+    {/if}
   </div>
 
   <div class="feedback-slot">
@@ -52,7 +70,12 @@
         <div class="feedback feedback--wrong" aria-live="assertive">
           <p>
             {#if picked}Tu as cliqué sur {picked.nameWithArticle.fr}.{/if}
-            C’était {expected?.nameWithArticle.fr}.
+            {#if question.accepted.length > 1}
+              <!-- Nommer un seul pays laisserait croire qu'il était le seul bon. -->
+              N’importe quel pays en or convenait.
+            {:else}
+              C’était {expected?.nameWithArticle.fr}.
+            {/if}
           </p>
           <button type="button" class="next" onclick={onnext}>Continuer</button>
         </div>
@@ -128,6 +151,30 @@
     display: grid;
     place-items: center;
     padding-block: 1rem;
+  }
+
+  .flag {
+    margin: 0;
+    padding: 0.4rem;
+    border-radius: 0.5rem;
+    background: var(--surface-strong);
+
+    & img {
+      display: block;
+      inline-size: min(32vw, 7.5rem);
+      block-size: auto;
+      border-radius: 0.25rem;
+      /* Les drapeaux blancs (Japon) doivent rester détachés du fond. */
+      box-shadow: 0 0 0 1px var(--line);
+    }
+  }
+
+  .visually-hidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
 
   .clue {

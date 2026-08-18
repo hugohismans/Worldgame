@@ -3,10 +3,10 @@
   import type { Country, Iso3 } from './lib/data/types.js';
   import GlobeView from './lib/globe/GlobeView.svelte';
   import type { Highlight } from './lib/globe/theme.js';
-  import { nameMode } from './lib/game/modes/name.js';
+  import { MODES } from './lib/game/modes/index.js';
   import { buildPool } from './lib/game/pool.js';
   import { createRound, currentQuestion, isOver, recordAnswer, summary } from './lib/game/round.js';
-  import type { PoolFilter, Question, Round, RoundLength } from './lib/game/types.js';
+  import type { ModeId, PoolFilter, Question, Round, RoundLength } from './lib/game/types.js';
   import GameHud from './lib/ui/GameHud.svelte';
   import HomeScreen from './lib/ui/HomeScreen.svelte';
   import ResultScreen from './lib/ui/ResultScreen.svelte';
@@ -18,7 +18,7 @@
 
   let screen = $state<Screen>('home');
   let round = $state<Round | null>(null);
-  let config = $state<{ length: RoundLength; filter: PoolFilter } | null>(null);
+  let config = $state<{ mode: ModeId; length: RoundLength; filter: PoolFilter } | null>(null);
   let reveal = $state<{
     question: Question;
     picked: Iso3;
@@ -36,20 +36,21 @@
   const highlights = $derived.by(() => {
     const map = new Map<Iso3, Highlight>();
     if (!reveal) return map;
-    if (reveal.correct) {
-      map.set(reveal.picked, 'correct');
-    } else {
-      // Le pays attendu s'allume aussi : c'est là qu'on apprend quelque chose.
-      map.set(reveal.picked, 'wrong');
-      map.set(reveal.question.answer, 'target');
-    }
+    // Toutes les bonnes réponses s'allument : en mode monnaie, on découvre
+    // ainsi la zone euro ou la zone franc CFA d'un coup d'œil.
+    for (const iso3 of reveal.question.accepted) map.set(iso3, 'target');
+    map.set(reveal.picked, reveal.correct ? 'correct' : 'wrong');
     return map;
   });
 
-  function start(next: { length: RoundLength; filter: PoolFilter }): void {
-    const pool = buildPool(countries, nameMode, next.filter);
+  function start(next: { mode: ModeId; length: RoundLength; filter: PoolFilter }): void {
+    const mode = MODES[next.mode];
+    const pool = buildPool(countries, mode, next.filter);
+    // `world` = tous les pays jouables : en mode monnaie, cliquer un pays de la
+    // zone euro reste juste même s'il n'était pas dans le pool tiré.
+    const world = buildPool(countries, mode, { tier: 'all', region: 'all' });
     config = next;
-    round = createRound(pool, nameMode, next.length, Math.random);
+    round = createRound(pool, mode, next.length, Math.random, world);
     reveal = null;
     screen = 'playing';
   }

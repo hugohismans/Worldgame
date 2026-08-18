@@ -29,7 +29,9 @@
   function colorOf(iso3: Iso3, base: string, hoverColor: string): string {
     const highlight = highlights?.get(iso3);
     if (highlight) return HIGHLIGHT_COLORS[highlight];
-    if (iso3 === hovered) return hoverColor;
+    // Pendant la révélation, le globe ne réagit plus au survol : un pays
+    // simplement pointé ne doit pas se confondre avec une réponse.
+    if (selectable && iso3 === hovered) return hoverColor;
     return base;
   }
 
@@ -146,6 +148,7 @@
   // Repeindre quand le feedback change : globe.gl met les accesseurs en cache.
   $effect(() => {
     void highlights;
+    void selectable;
     repaint();
   });
 

@@ -8,9 +8,11 @@ export const GLOBE_COLORS = {
   /** Territoires dépendants : présents sur la carte, jamais demandés. */
   landDependent: '#22394d',
   stroke: '#0a1826',
-  hover: '#e9b44c',
+  /* Le survol doit rester lisible sans jamais ressembler à une réponse : l'or
+     est réservé au pays attendu. */
+  hover: '#9ecbe8',
   marker: '#9fb8cc',
-  markerHover: '#e9b44c',
+  markerHover: '#9ecbe8',
   /** Feedback de réponse. */
   correct: '#3fa06a',
   wrong: '#c8483c',
