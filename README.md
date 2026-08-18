@@ -154,4 +154,5 @@ src/App.svelte            écran principal
       pool (notoriété et continent), score, feedback, écran de fin.
 - [x] **Phase 3 — Modes** : drapeau, capitale, monnaie, choix du mode sur l'accueil.
 - [ ] Phase 4 — Bascule FR/EN
-- [ ] Phase 5 — Direction artistique, animations, meilleurs scores, mobile, déploiement
+- [ ] Phase 5 — Direction artistique, animations, meilleurs scores, mobile, accessibilité
+- [ ] Phase 6 — Sound design
