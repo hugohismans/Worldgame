@@ -2,6 +2,7 @@
   import Globe, { type GlobeInstance } from 'globe.gl';
   import { countryOf, countryPoints, countryPolygons } from '../data/countries.js';
   import type { Country, CountryFeature, Iso3 } from '../data/types.js';
+  import { fittingAltitude } from './camera.js';
   import { GLOBE_COLORS } from './theme.js';
 
   interface Props {
@@ -75,8 +76,15 @@
     );
     instance.controls().enablePan = false;
     instance.controls().minDistance = 130;
-    instance.controls().maxDistance = 400;
-    instance.pointOfView({ lat: 20, lng: 5, altitude: 2.2 });
+    instance.controls().maxDistance = 600;
+
+    const frameGlobe = (): void => {
+      const { clientWidth: width, clientHeight: height } = container;
+      const fov = (instance.camera() as { fov?: number }).fov ?? 50;
+      instance.pointOfView({ altitude: fittingAltitude(width, height, fov) }, 300);
+    };
+
+    instance.pointOfView({ lat: 20, lng: 5, altitude: fittingAltitude(container.clientWidth, container.clientHeight, 50) });
     globe = instance;
 
     const resize = new ResizeObserver(([entry]) => {
@@ -84,7 +92,14 @@
     });
     resize.observe(container);
 
+    // Recadrer à la rotation de l'écran seulement : un ResizeObserver se
+    // déclencherait aussi quand la barre d'adresse mobile se replie, ce qui
+    // annulerait le zoom du joueur en plein jeu.
+    const orientation = window.matchMedia('(orientation: portrait)');
+    orientation.addEventListener('change', frameGlobe);
+
     return () => {
+      orientation.removeEventListener('change', frameGlobe);
       resize.disconnect();
       instance._destructor();
       globe = undefined;
