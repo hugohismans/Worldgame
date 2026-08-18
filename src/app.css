@@ -1,0 +1,34 @@
+@layer reset, base;
+
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  body,
+  h1,
+  h2,
+  p {
+    margin: 0;
+  }
+}
+
+@layer base {
+  :root {
+    --space: #070d18;
+    --surface: #10203288;
+    --text: #dbe7f2;
+
+    color-scheme: dark;
+    font-family: system-ui, sans-serif;
+    line-height: 1.5;
+  }
+
+  body {
+    min-block-size: 100dvh;
+    background: var(--space);
+    color: var(--text);
+  }
+}
