@@ -41,6 +41,8 @@ export interface Country {
    */
   readonly playable: boolean;
   readonly shape: Shape;
+  /** Notoriété. `null` pour les territoires, qui ne sont jamais demandés. */
+  readonly tier: Tier | null;
   /** Centre du pays en `[longitude, latitude]` — recentrage caméra et marqueurs. */
   readonly center: readonly [number, number];
   /** Superficie en km², `null` si inconnue. */
@@ -62,3 +64,10 @@ export interface CountryFeatureCollection {
   readonly type: 'FeatureCollection';
   readonly features: readonly CountryFeature[];
 }
+
+/**
+ * Niveau de notoriété d'un pays, qui sert à composer des pools de difficulté.
+ * Classement éditorial, défini dans `scripts/overrides/tiers.ts`.
+ */
+export const TIERS = ['common', 'uncommon', 'rare'] as const;
+export type Tier = (typeof TIERS)[number];

@@ -13,7 +13,7 @@ import { mkdir, readFile, writeFile, copyFile, rm, readdir } from 'node:fs/promi
 import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Country, CountryFeature, Currency, Iso3, RegionId } from '../src/lib/data/types.js';
+import type { Country, CountryFeature, Currency, Iso3, RegionId, Tier } from '../src/lib/data/types.js';
 import {
   EXTRA_ENTITIES,
   ISO_ALIASES,
@@ -23,6 +23,7 @@ import {
 import { NAME_EN_OVERRIDES, NAME_FR_OVERRIDES } from './overrides/names.js';
 import { CAPITAL_FR_OVERRIDES } from './overrides/capitals.js';
 import { CURRENCY_EN_OVERRIDES, CURRENCY_FR } from './overrides/currencies.js';
+import { TIER_BY_ISO, TIER_DUPLICATES } from './overrides/tiers.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CACHE = resolve(ROOT, '.cache');
@@ -204,6 +205,7 @@ async function main(): Promise<void> {
         currencies: [],
         region: extra.region,
         playable: false,
+        tier: null,
         shape,
         center: extra.center,
         area: null,
@@ -228,6 +230,12 @@ async function main(): Promise<void> {
 
     const playable = raw.independent === true && raw.unMember === true;
     if (playable && !capital) problems.push(`Capitale manquante : ${iso3}`);
+
+    let tier: Tier | null = null;
+    if (playable) {
+      tier = TIER_BY_ISO.get(iso3) ?? null;
+      if (!tier) problems.push(`Pays absent des listes de notoriété : ${iso3}`);
+    }
 
     const latlng = raw.latlng;
     if (!latlng) problems.push(`Coordonnées manquantes : ${iso3}`);
@@ -254,11 +262,21 @@ async function main(): Promise<void> {
       currencies: buildCurrencies(raw),
       region,
       playable,
+      tier,
       shape,
       center,
       area: raw.area ?? null,
       population: populationByIso.get(iso3) ?? null,
     });
+  }
+
+  // --- cohérence des listes de notoriété ---
+  for (const iso3 of TIER_DUPLICATES) {
+    problems.push(`Pays dans plusieurs listes de notoriété : ${iso3}`);
+  }
+  const playableIsos = new Set(countries.filter((c) => c.playable).map((c) => c.iso3));
+  for (const iso3 of TIER_BY_ISO.keys()) {
+    if (!playableIsos.has(iso3)) problems.push(`Liste de notoriété : ${iso3} n'est pas un pays jouable`);
   }
 
   // --- drapeaux ---
@@ -299,6 +317,9 @@ async function main(): Promise<void> {
     `  jouables : ${playable.length} (${playable.filter((c) => c.shape === 'polygon').length} polygones, ${playable.filter((c) => c.shape === 'point').length} marqueurs)`,
   );
   console.log(`  décor (non jouables) : ${countries.length - playable.length}`);
+  for (const tier of ['common', 'uncommon', 'rare'] as const) {
+    console.log(`  notoriété « ${tier} » : ${playable.filter((c) => c.tier === tier).length}`);
+  }
 
   if (notices.length) {
     console.log(`\n⚠︎ Données à vérifier (${notices.length}) :`);

@@ -54,6 +54,7 @@ relues à la main, à éditer si une donnée est fausse.
 | `geography.ts` | polygones Natural Earth sans ISO (`-99`), entités hors base pays, libellés de régions |
 | `names.ts` | noms de pays FR/EN mal orthographiés ou datés à la source |
 | `capitals.ts` | capitales en français (la source ne fournit que l'anglais) |
+| `tiers.ts` | répartition des 194 pays jouables en trois niveaux de notoriété |
 | `currencies.ts` | noms de monnaies en français, par code ISO 4217 |
 
 ### Choix de modélisation
@@ -68,6 +69,12 @@ relues à la main, à éditer si une donnée est fausse.
   et du Pacifique…). Ils sont rendus comme marqueurs ponctuels cliquables
   (`shape: 'point'`) plutôt qu'exclus du jeu.
 - **L'Antarctique est retiré** de la géométrie : ni jouable, ni cliquable.
+- **Trois niveaux de notoriété** (`scripts/overrides/tiers.ts`) servent à
+  composer des pools de difficulté : `common` (66), `uncommon` (73), `rare` (55).
+  Le critère n'est pas « connaître le nom » mais « savoir le placer sur un
+  globe » — d'où Monaco, Singapour et le Vatican en `rare`. Classement
+  éditorial et discutable : chaque pays est dans une liste et une seule, le
+  build échoue si l'un manque ou est en double.
 - **Population** : reprise de Natural Earth (`POP_EST`), donc inconnue pour les
   29 pays sans polygone. Aucun mode de jeu ne s'en sert aujourd'hui.
 
