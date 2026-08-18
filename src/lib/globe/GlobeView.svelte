@@ -3,16 +3,22 @@
   import { countryOf, countryPoints, countryPolygons } from '../data/countries.js';
   import type { Country, CountryFeature, Iso3 } from '../data/types.js';
   import { fittingAltitude } from './camera.js';
-  import { GLOBE_COLORS } from './theme.js';
+  import { GLOBE_COLORS, HIGHLIGHT_COLORS, type Highlight } from './theme.js';
 
   interface Props {
     /** Clic sur un pays, polygone ou marqueur. */
     onselect?: (country: Country) => void;
     /** Survol : `null` quand le pointeur quitte tout pays. */
     onhover?: (country: Country | null) => void;
+    /** Couleurs temporaires posées pendant la révélation d'une réponse. */
+    highlights?: ReadonlyMap<Iso3, Highlight>;
+    /** Pays vers lequel la caméra se recentre en s'animant. */
+    focus?: Iso3 | null;
+    /** À `false`, le globe se tourne mais ne se clique plus. */
+    selectable?: boolean;
   }
 
-  const { onselect, onhover }: Props = $props();
+  const { onselect, onhover, highlights, focus = null, selectable = true }: Props = $props();
 
   let container: HTMLDivElement;
   let globe: GlobeInstance | undefined;
@@ -20,24 +26,37 @@
 
   const isoOf = (feature: object): Iso3 => (feature as CountryFeature).properties.iso3;
 
+  function colorOf(iso3: Iso3, base: string, hoverColor: string): string {
+    const highlight = highlights?.get(iso3);
+    if (highlight) return HIGHLIGHT_COLORS[highlight];
+    if (iso3 === hovered) return hoverColor;
+    return base;
+  }
+
   function capColor(feature: object): string {
     const iso3 = isoOf(feature);
-    if (iso3 === hovered) return GLOBE_COLORS.hover;
-    return countryOf(iso3)?.playable === false ? GLOBE_COLORS.landDependent : GLOBE_COLORS.land;
+    const base =
+      countryOf(iso3)?.playable === false ? GLOBE_COLORS.landDependent : GLOBE_COLORS.land;
+    return colorOf(iso3, base, GLOBE_COLORS.hover);
   }
 
   const pointColor = (point: object): string =>
-    (point as Country).iso3 === hovered ? GLOBE_COLORS.markerHover : GLOBE_COLORS.marker;
+    colorOf((point as Country).iso3, GLOBE_COLORS.marker, GLOBE_COLORS.markerHover);
+
+  function repaint(): void {
+    globe?.polygonCapColor(capColor).pointColor(pointColor);
+  }
 
   /** globe.gl met les accesseurs en cache : les réappliquer force le repeint. */
   function setHover(iso3: Iso3 | null): void {
     if (hovered === iso3) return;
     hovered = iso3;
-    globe?.polygonCapColor(capColor).pointColor(pointColor);
+    repaint();
     onhover?.(iso3 === null ? null : (countryOf(iso3) ?? null));
   }
 
   function select(iso3: Iso3): void {
+    if (!selectable) return;
     const country = countryOf(iso3);
     if (country) onselect?.(country);
   }
@@ -122,6 +141,25 @@
       instance._destructor();
       globe = undefined;
     };
+  });
+
+  // Repeindre quand le feedback change : globe.gl met les accesseurs en cache.
+  $effect(() => {
+    void highlights;
+    repaint();
+  });
+
+  // Amener la bonne réponse au centre, pour qu'on la voie là où elle est.
+  $effect(() => {
+    const iso3 = focus;
+    if (!iso3 || !globe) return;
+    const country = countryOf(iso3);
+    if (!country) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    globe.pointOfView(
+      { lat: country.center[1], lng: country.center[0], altitude: globe.pointOfView().altitude },
+      reduced ? 0 : 900,
+    );
   });
 </script>
 

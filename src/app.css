@@ -10,16 +10,29 @@
   body,
   h1,
   h2,
-  p {
+  p,
+  dd,
+  figure {
     margin: 0;
+  }
+
+  button {
+    font: inherit;
   }
 }
 
 @layer base {
   :root {
     --space: #070d18;
-    --surface: #10203288;
+    --surface: #14243799;
+    --surface-strong: #142437ee;
+    --line: #ffffff1f;
     --text: #dbe7f2;
+    --text-dim: #93a7bb;
+    --accent: #e9b44c;
+    --accent-text: #f4d08a;
+    --correct: #6fce9c;
+    --wrong: #ef7a6d;
 
     color-scheme: dark;
     font-family: system-ui, sans-serif;
@@ -27,8 +40,16 @@
   }
 
   body {
+    margin: 0;
     min-block-size: 100dvh;
     background: var(--space);
     color: var(--text);
+    /* Pas de rebond élastique au drag sur le globe. */
+    overscroll-behavior: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 }
