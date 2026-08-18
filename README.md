@@ -70,6 +70,13 @@ relues à la main, à éditer si une donnée est fausse.
   et du Pacifique…). Ils sont rendus comme marqueurs ponctuels cliquables
   (`shape: 'point'`) plutôt qu'exclus du jeu.
 - **L'Antarctique est retiré** de la géométrie : ni jouable, ni cliquable.
+- **Monnaies partagées.** Vingt-six pays ont l'euro, huit le franc CFA (BCEAO).
+  Plutôt que d'écarter du jeu les monnaies les plus intéressantes, le mode
+  « monnaie » accepte **n'importe quel pays de la zone** et éclaire la zone
+  entière à la révélation. Le drapeau `ACCEPT_ANY_COUNTRY_OF_THE_ZONE`
+  (`src/lib/game/modes/currency.ts`) restreint le jeu aux monnaies uniques.
+  Seule la monnaie **nationale** compte : le dollar américain a cours légal au
+  Panama, mais faire entrer le Panama dans la « zone dollar » n'apprendrait rien.
 - **Trois niveaux de notoriété** (`scripts/overrides/tiers.ts`) servent à
   composer des pools de difficulté : `common` (66), `uncommon` (73), `rare` (55).
   Le critère n'est pas « connaître le nom » mais « savoir le placer sur un
@@ -145,6 +152,6 @@ src/App.svelte            écran principal
 - [x] **Phase 1 — Socle** : projet, dataset, globe avec pays et marqueurs cliquables.
 - [x] **Phase 2 — MVP jouable** : mode « nom », manches de 10/20/30, filtres de
       pool (notoriété et continent), score, feedback, écran de fin.
-- [ ] Phase 3 — Modes drapeau / capitale / monnaie
+- [x] **Phase 3 — Modes** : drapeau, capitale, monnaie, choix du mode sur l'accueil.
 - [ ] Phase 4 — Bascule FR/EN
 - [ ] Phase 5 — Direction artistique, animations, meilleurs scores, mobile, déploiement
