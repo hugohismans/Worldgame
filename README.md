@@ -12,6 +12,7 @@ npm run dev        # serveur de développement
 npm run build      # build statique dans dist/
 npm run preview    # sert le build
 npm run check      # svelte-check + tsc (TypeScript strict)
+npm run test       # Vitest sur la logique pure
 ```
 
 ## Données
@@ -92,6 +93,25 @@ Le chemin de base `/Worldgame/` est appliqué au build et à `npm run preview`,
 mais pas à `npm run dev`. Il est à changer dans `vite.config.ts` si le dépôt est
 renommé ou si un domaine personnalisé est configuré.
 
+## Ajouter un mode de jeu
+
+Le moteur ne connaît qu'une notion abstraite de question : un indice et la
+liste des réponses acceptées. Un mode tient donc dans un fichier.
+
+1. Créer `src/lib/game/modes/<mode>.ts` qui exporte un `GameMode` :
+   - `eligible(country)` écarte les pays auxquels la question ne s'applique
+     pas (un pays sans capitale ne peut pas sortir en mode « capitale ») ;
+   - `question(country, pool)` rend `{ answer, accepted, clue }`. `accepted`
+     contient plusieurs pays quand plusieurs réponses sont justes — le mode
+     « monnaie » acceptera n'importe quel pays de la zone euro.
+2. Ajouter la variante d'indice au type `Clue` dans `src/lib/game/types.ts`.
+   Un indice porte des valeurs déjà traduites (`Localized`), jamais du texte
+   figé : c'est la vue qui choisit la langue.
+3. Afficher cette variante dans `src/lib/ui/GameHud.svelte`.
+
+Rien d'autre à toucher : le tirage, le score, les séries et l'écran de fin
+sont communs à tous les modes.
+
 ## Contraintes de conception
 
 - **Mobile d'abord.** Les écrans sont pensés en portrait puis élargis, jamais
@@ -123,7 +143,8 @@ src/App.svelte            écran principal
 ## État d'avancement
 
 - [x] **Phase 1 — Socle** : projet, dataset, globe avec pays et marqueurs cliquables.
-- [ ] Phase 2 — MVP jouable (mode « nom », manches de 10/20/30, score, écran de fin)
+- [x] **Phase 2 — MVP jouable** : mode « nom », manches de 10/20/30, filtres de
+      pool (notoriété et continent), score, feedback, écran de fin.
 - [ ] Phase 3 — Modes drapeau / capitale / monnaie
 - [ ] Phase 4 — Bascule FR/EN
 - [ ] Phase 5 — Direction artistique, animations, meilleurs scores, mobile, déploiement
