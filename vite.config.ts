@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 
-// https://vite.dev/config/
-export default defineConfig({
+// Le site est publié sur https://hugohismans.github.io/Worldgame/ : les assets
+// doivent être préfixés au build (et à la prévisualisation de ce build), mais
+// pas sur le serveur de développement.
+export default defineConfig(({ command, isPreview }) => ({
+  base: command === 'build' || isPreview ? '/Worldgame/' : '/',
   plugins: [svelte()],
-})
+}))

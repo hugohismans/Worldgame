@@ -71,6 +71,20 @@ relues à la main, à éditer si une donnée est fausse.
 - **Population** : reprise de Natural Earth (`POP_EST`), donc inconnue pour les
   29 pays sans polygone. Aucun mode de jeu ne s'en sert aujourd'hui.
 
+## Déploiement
+
+Le site est publié sur **https://hugohismans.github.io/Worldgame/** par
+`.github/workflows/deploy.yml` : chaque push sur `main` relance `npm run check`,
+`npm run build`, puis déploie `dist/`.
+
+Côté dépôt, *Settings → Pages → Source* doit être réglé sur **GitHub Actions**
+(et non « Deploy from a branch » : Pages servirait alors le `index.html` source,
+qui référence `/src/main.ts` et ne fonctionne pas sans build).
+
+Le chemin de base `/Worldgame/` est appliqué au build et à `npm run preview`,
+mais pas à `npm run dev`. Il est à changer dans `vite.config.ts` si le dépôt est
+renommé ou si un domaine personnalisé est configuré.
+
 ## Architecture
 
 ```
