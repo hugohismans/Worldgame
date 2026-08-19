@@ -139,8 +139,42 @@ Ajouter une chaîne : l'écrire dans `fr`, puis dans `en` — le compilateur
 refusera de passer tant que la seconde manque. Ajouter une langue : un
 dictionnaire de plus, un code dans `LANGS`.
 
+## Direction artistique
+
+**Carte marine de nuit.** Les terres sont en parchemin sur un océan d'encre —
+l'inverse du bleu-sur-bleu habituel. C'est un parti pris, et c'est aussi ce qui
+sépare le mieux deux pays voisins.
+
+| Jeton | Valeur | Rôle |
+|---|---|---|
+| `--abysse` | `#060f18` | le fond, derrière le globe |
+| `--encre` | `#0e2130` | l'océan et les surfaces d'interface |
+| `--parchemin` | `#d9cfba` | les terres |
+| `--laiton` | `#d9a441` | l'accent : actions, pays attendu |
+| `--verdigris` | `#37977d` | bonne réponse |
+| `--corail` | `#cf5a45` | erreur |
+
+**Typographie** : Bricolage Grotesque (titres et texte) associé à IBM Plex Mono
+pour les relevés — score, étiquettes, records. Les deux fontes sont **hébergées
+dans le dépôt** (144 Ko, sous-ensembles latin et latin-ext chargés séparément) :
+aucun appel à un service tiers, et le jeu reste identique hors ligne.
+
+**Élément signature** : la *neatline*, ce cadre en laiton avec ses équerres
+d'angle qui encadre le globe pendant la partie, comme la graduation d'une carte
+marine.
+
+**Animations** : elles servent le jeu et rien d'autre — l'indice qui monte à
+chaque question, la pulsation du score sur une bonne réponse, le globe qui
+pivote pour amener le pays attendu au centre. Toutes sont neutralisées sous
+`prefers-reduced-motion`.
+
 ## Contraintes de conception
 
+- **Accessibilité.** Tout est atteignable au clavier avec un focus visible, les
+  changements d'état passent par `aria-live`, et `prefers-reduced-motion` coupe
+  les animations. **Limite connue** : on ne peut pas désigner un pays au clavier
+  — le globe est une scène 3D. Le bouton « je donne ma langue au chat » permet
+  au moins d'avancer et de voir la réponse sans pointeur.
 - **Mobile d'abord.** Les écrans sont pensés en portrait puis élargis, jamais
   l'inverse. Conséquences déjà appliquées : cadrage du globe calculé depuis le
   ratio de l'écran, `touch-action: none` sur le canvas, aucune information
@@ -175,7 +209,8 @@ src/App.svelte            écran principal
 - [x] **Phase 3 — Modes** : drapeau, capitale, monnaie, choix du mode sur l'accueil.
 - [x] **Phase 4 — Bascule FR/EN** : interface, noms, capitales et monnaies dans
       les deux langues ; détection au premier lancement, choix mémorisé.
-- [ ] Phase 5 — Direction artistique, animations, meilleurs scores, mobile, accessibilité
+- [x] **Phase 5 — Finition** : direction artistique, animations, meilleurs
+      scores par mode et par longueur, mise en page mobile, accessibilité.
 - [ ] Phase 6 — Sound design : retours de jeu uniquement (tap, bonne réponse,
       erreur, révélation, fin de manche). Sons d'interface **synthétisés** via
       l'API Web Audio — zéro octet, aucune licence à tracer — et un ou deux

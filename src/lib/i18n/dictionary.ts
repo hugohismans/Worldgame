@@ -44,6 +44,8 @@ export const fr = {
   poolShort: (available: number, length: number) =>
     `${available} questions disponibles : la manche en comptera ${length}.`,
   poolCount: (available: number) => `${available} questions possibles.`,
+  bestScore: (score: number, total: number) => `Record : ${score} / ${total}`,
+  noRecordYet: 'Pas encore de record ici.',
 
   // Manche
   quitRound: 'Quitter la manche',
@@ -58,6 +60,7 @@ export const fr = {
   itWas: (country: string) => `C’était ${country}.`,
   anyGoldCountry: 'N’importe quel pays en or convenait.',
   next: 'Continuer',
+  skip: 'Je donne ma langue au chat',
 
   // Fin de manche
   roundOver: 'Manche terminée',
@@ -66,6 +69,7 @@ export const fr = {
   toReview: 'À revoir',
   answered: (country: string) => `tu as répondu ${country}`,
   flawless: 'Sans faute.',
+  newRecord: 'Nouveau record',
   playAgain: 'Rejouer',
   changeSettings: 'Changer de réglages',
 };
@@ -108,6 +112,8 @@ export const en: Dictionary = {
   poolShort: (available: number, length: number) =>
     `${available} questions available: this round will have ${length}.`,
   poolCount: (available: number) => `${available} questions available.`,
+  bestScore: (score: number, total: number) => `Best: ${score} / ${total}`,
+  noRecordYet: 'No record here yet.',
 
   quitRound: 'Quit round',
   roundProgress: 'Round progress',
@@ -121,6 +127,7 @@ export const en: Dictionary = {
   itWas: (country: string) => `It was ${country}.`,
   anyGoldCountry: 'Any country in gold would have counted.',
   next: 'Continue',
+  skip: 'I give up',
 
   roundOver: 'Round over',
   accuracy: 'Accuracy',
@@ -128,6 +135,7 @@ export const en: Dictionary = {
   toReview: 'To review',
   answered: (country: string) => `you picked ${country}`,
   flawless: 'Flawless.',
+  newRecord: 'New record',
   playAgain: 'Play again',
   changeSettings: 'Change settings',
 };

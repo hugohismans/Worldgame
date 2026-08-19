@@ -87,7 +87,7 @@
       .backgroundColor(GLOBE_COLORS.background)
       .showAtmosphere(true)
       .atmosphereColor(GLOBE_COLORS.atmosphere)
-      .atmosphereAltitude(0.18)
+      .atmosphereAltitude(0.11)
       .showGraticules(true)
       .polygonsData(countryPolygons as unknown as object[])
       .polygonAltitude(0.01)

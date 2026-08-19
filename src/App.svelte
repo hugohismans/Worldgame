@@ -7,6 +7,7 @@
   import { buildPool } from './lib/game/pool.js';
   import { createRound, currentQuestion, isOver, recordAnswer, summary } from './lib/game/round.js';
   import type { ModeId, PoolFilter, Question, Round, RoundLength } from './lib/game/types.js';
+  import { records } from './lib/storage/records.svelte.js';
   import GameHud from './lib/ui/GameHud.svelte';
   import HomeScreen from './lib/ui/HomeScreen.svelte';
   import ResultScreen from './lib/ui/ResultScreen.svelte';
@@ -21,7 +22,8 @@
   let config = $state<{ mode: ModeId; length: RoundLength; filter: PoolFilter } | null>(null);
   let reveal = $state<{
     question: Question;
-    picked: Iso3;
+    /** `null` quand le joueur a passé la question. */
+    picked: Iso3 | null;
     correct: boolean;
   } | null>(null);
   let pending: ReturnType<typeof setTimeout> | undefined;
@@ -39,7 +41,7 @@
     // Toutes les bonnes réponses s'allument : en mode monnaie, on découvre
     // ainsi la zone euro ou la zone franc CFA d'un coup d'œil.
     for (const iso3 of reveal.question.accepted) map.set(iso3, 'target');
-    map.set(reveal.picked, reveal.correct ? 'correct' : 'wrong');
+    if (reveal.picked) map.set(reveal.picked, reveal.correct ? 'correct' : 'wrong');
     return map;
   });
 
@@ -67,10 +69,26 @@
     if (correct) pending = setTimeout(advance, CORRECT_PAUSE_MS);
   }
 
+  /** Le joueur renonce : on lui montre la réponse, elle compte comme ratée. */
+  function skip(): void {
+    if (screen !== 'playing' || reveal || !round) return;
+    const asked = currentQuestion(round);
+    if (!asked) return;
+    round = recordAnswer(round, null);
+    reveal = { question: asked, picked: null, correct: false };
+  }
+
+  let isRecord = $state(false);
+
   function advance(): void {
     clearTimeout(pending);
     reveal = null;
-    if (round && isOver(round)) screen = 'result';
+    if (!round || !isOver(round)) return;
+    const result = summary(round);
+    isRecord = config
+      ? records.submit(config.mode, config.length, { score: result.score, total: result.total })
+      : false;
+    screen = 'result';
   }
 
   function quit(): void {
@@ -106,10 +124,11 @@
         score={summary(round).score}
         reveal={reveal ? { picked: reveal.picked, correct: reveal.correct } : null}
         onnext={advance}
+        onskip={skip}
         onquit={quit}
       />
     {:else if screen === 'result' && round}
-      <ResultScreen summary={summary(round)} onreplay={replay} onhome={quit} />
+      <ResultScreen summary={summary(round)} {isRecord} onreplay={replay} onhome={quit} />
     {/if}
   </div>
 </main>

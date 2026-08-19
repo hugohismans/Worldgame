@@ -1,23 +1,29 @@
-/** Couleurs du globe. La direction artistique complète arrive en phase 5. */
+/**
+ * Couleurs du globe, alignées sur la direction « carte marine de nuit » :
+ * terres en parchemin sur océan d'encre. Les valeurs sont dupliquées depuis
+ * `app.css` parce que three.js ne lit pas les variables CSS.
+ */
 export const GLOBE_COLORS = {
-  background: '#070d18',
-  ocean: '#0d2136',
-  atmosphere: '#4d7ea8',
+  background: '#060f18',
+  ocean: '#0e2130',
+  /* Halo discret : à pleine intensité, le laiton mangeait le globe. */
+  atmosphere: '#7d6a44',
   /** Pays proposables comme réponse. */
-  land: '#2f4f6b',
+  land: '#d9cfba',
   /** Territoires dépendants : présents sur la carte, jamais demandés. */
-  landDependent: '#22394d',
-  stroke: '#0a1826',
-  /* Le survol doit rester lisible sans jamais ressembler à une réponse : l'or
-     est réservé au pays attendu. */
-  hover: '#9ecbe8',
-  marker: '#9fb8cc',
-  markerHover: '#9ecbe8',
+  landDependent: '#8d8878',
+  stroke: '#0a1a26',
+  /** Survol : un parchemin plus vif, jamais une couleur de réponse. */
+  hover: '#fbf3df',
+  /* Ton moyen : les marqueurs doivent se voir aussi bien sur le parchemin des
+     terres que sur l'encre de l'océan. */
+  marker: '#5d7180',
+  markerHover: '#fbf3df',
   /** Feedback de réponse. */
-  correct: '#3fa06a',
-  wrong: '#c8483c',
+  correct: '#37977d',
+  wrong: '#cf5a45',
   /** Le pays attendu, révélé après une erreur. */
-  target: '#e9b44c',
+  target: '#d9a441',
 } as const;
 
 /** Rôle de couleur temporaire posé sur un pays pendant la révélation. */

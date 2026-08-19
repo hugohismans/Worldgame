@@ -5,11 +5,13 @@
 
   interface Props {
     summary: RoundSummary;
+    /** `true` quand la manche vient de battre le record du mode. */
+    isRecord: boolean;
     onreplay: () => void;
     onhome: () => void;
   }
 
-  const { summary, onreplay, onhome }: Props = $props();
+  const { summary, isRecord, onreplay, onhome }: Props = $props();
 
   const percent = $derived(Math.round(summary.accuracy * 100));
 </script>
@@ -17,16 +19,22 @@
 <section class="result">
   <header>
     <p class="label">{i18n.t.roundOver}</p>
-    <p class="score"><strong>{summary.score}</strong> / {summary.total}</p>
+    <p class="score readout"><strong>{summary.score}</strong> / {summary.total}</p>
+    {#if isRecord}
+      <p class="record readout">★ {i18n.t.newRecord}</p>
+    {/if}
     <dl class="stats">
-      <div><dt>{i18n.t.accuracy}</dt><dd>{percent}%</dd></div>
-      <div><dt>{i18n.t.bestStreak}</dt><dd>{summary.bestStreak}</dd></div>
+      <div><dt class="label">{i18n.t.accuracy}</dt><dd class="readout">{percent}%</dd></div>
+      <div>
+        <dt class="label">{i18n.t.bestStreak}</dt>
+        <dd class="readout">{summary.bestStreak}</dd>
+      </div>
     </dl>
   </header>
 
   {#if summary.missed.length > 0}
     <div class="missed">
-      <h2>{i18n.t.toReview}</h2>
+      <h2 class="label">{i18n.t.toReview}</h2>
       <ul>
         {#each summary.missed as answer (answer.question.answer)}
           {@const expected = countryOf(answer.question.answer)}
@@ -60,14 +68,7 @@
     /* C'est la liste qui défile, pas l'écran : les boutons restent atteignables
        au pouce même avec trente pays ratés. */
     overflow: hidden;
-    background: color-mix(in oklab, var(--space) 94%, transparent);
-  }
-
-  .label {
-    color: var(--text-dim);
-    font-size: 0.8rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    background: color-mix(in oklab, var(--abysse) 94%, transparent);
   }
 
   .score {
@@ -76,7 +77,22 @@
     line-height: 1;
 
     & strong {
-      color: var(--accent);
+      color: var(--laiton);
+    }
+  }
+
+  .record {
+    margin-block-start: 0.35rem;
+    color: var(--laiton);
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    animation: record-in 500ms ease-out;
+  }
+
+  @keyframes record-in {
+    from {
+      opacity: 0;
+      scale: 0.9;
     }
   }
 
@@ -84,11 +100,6 @@
     display: flex;
     gap: 2rem;
     margin-block-start: 1rem;
-
-    & dt {
-      color: var(--text-dim);
-      font-size: 0.85rem;
-    }
 
     & dd {
       margin: 0;
@@ -105,10 +116,6 @@
 
     & h2 {
       margin-block-end: 0.5rem;
-      font-size: 0.8rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-dim);
     }
 
     & ul {
@@ -130,7 +137,7 @@
       gap: 0.5rem;
       align-items: baseline;
       padding-block: 0.5rem;
-      border-block-end: 1px solid var(--line);
+      border-block-end: 1px solid var(--trait);
     }
   }
 
@@ -139,13 +146,13 @@
   }
 
   .picked {
-    color: var(--wrong);
+    color: var(--corail);
     font-size: 0.85rem;
   }
 
   .perfect {
     flex: 1;
-    color: var(--correct);
+    color: var(--verdigris);
     font-size: 1.25rem;
   }
 
@@ -157,17 +164,17 @@
 
   button {
     min-block-size: 48px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--trait);
     border-radius: 999px;
     background: var(--surface);
-    color: var(--text);
+    color: var(--os);
     font: inherit;
     cursor: pointer;
 
     &.primary {
       border-color: transparent;
-      background: var(--accent);
-      color: var(--space);
+      background: var(--laiton);
+      color: var(--abysse);
       font-weight: 600;
     }
   }

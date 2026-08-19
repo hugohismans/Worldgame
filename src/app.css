@@ -1,4 +1,49 @@
-@layer reset, base;
+@layer reset, fonts, base;
+
+@layer fonts {
+  /* Fontes hébergées dans le dépôt : aucun appel à un service tiers, et le
+     jeu reste identique hors ligne. Les sous-ensembles latin-ext ne sont
+     téléchargés que si un texte en a besoin (Chișinău, Türkiye…). */
+  @font-face {
+    font-family: 'Bricolage Grotesque';
+    font-weight: 400 800;
+    font-display: swap;
+    src: url('./assets/fonts/bricolage-grotesque-400-800-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+      U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+      U+FEFF, U+FFFD;
+  }
+
+  @font-face {
+    font-family: 'Bricolage Grotesque';
+    font-weight: 400 800;
+    font-display: swap;
+    src: url('./assets/fonts/bricolage-grotesque-400-800-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+      U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+      U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+
+  @font-face {
+    font-family: 'IBM Plex Mono';
+    font-weight: 500;
+    font-display: swap;
+    src: url('./assets/fonts/ibm-plex-mono-500-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+      U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+      U+FEFF, U+FFFD;
+  }
+
+  @font-face {
+    font-family: 'IBM Plex Mono';
+    font-weight: 500;
+    font-display: swap;
+    src: url('./assets/fonts/ibm-plex-mono-500-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+      U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+      U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+}
 
 @layer reset {
   *,
@@ -23,33 +68,67 @@
 
 @layer base {
   :root {
-    --space: #070d18;
-    --surface: #14243799;
-    --surface-strong: #142437ee;
-    --line: #ffffff1f;
-    --text: #dbe7f2;
-    --text-dim: #93a7bb;
-    --accent: #e9b44c;
-    --accent-text: #f4d08a;
-    --correct: #6fce9c;
-    --wrong: #ef7a6d;
+    /*
+     * Carte marine de nuit. Les terres sont en parchemin sur un océan d'encre,
+     * l'inverse du bleu-sur-bleu habituel : c'est le parti pris, et c'est aussi
+     * ce qui rend les pays lisibles les uns par rapport aux autres.
+     */
+    --abysse: #060f18; /* le fond, plus sombre que l'océan */
+    --encre: #0e2130; /* l'océan, et les surfaces de l'interface */
+    --parchemin: #d9cfba; /* les terres */
+    --laiton: #d9a441; /* l'accent : actions, pays attendu */
+    --verdigris: #37977d; /* bonne réponse */
+    --corail: #cf5a45; /* erreur */
+
+    /* Déclinaisons */
+    --os: #f0ead9;
+    --os-fane: #9aa8b4;
+    --laiton-clair: #f0c877;
+    --trait: #f0ead91f;
+    --surface: #0e2130cc;
+    --surface-dense: #0e2130f2;
 
     color-scheme: dark;
-    font-family: system-ui, sans-serif;
+    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
     line-height: 1.5;
   }
 
   body {
     margin: 0;
     min-block-size: 100dvh;
-    background: var(--space);
-    color: var(--text);
+    background: var(--abysse);
+    color: var(--os);
     /* Pas de rebond élastique au drag sur le globe. */
     overscroll-behavior: none;
   }
 
+  /* La signature typographique : les étiquettes et les compteurs sont des
+     relevés d'instrument, en chasse fixe. */
+  .readout {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .label {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--os-fane);
+  }
+
   :focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
+    outline: 2px solid var(--laiton);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }

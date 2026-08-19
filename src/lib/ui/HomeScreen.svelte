@@ -2,6 +2,7 @@
   import { countries } from '../data/countries.js';
   import { REGIONS, TIERS, type RegionId, type Tier } from '../data/types.js';
   import { i18n } from '../i18n/i18n.svelte.js';
+  import { records } from '../storage/records.svelte.js';
   import { LANGS, LANG_LABELS } from '../i18n/language.js';
   import { buildPool } from '../game/pool.js';
   import { MODES } from '../game/modes/index.js';
@@ -49,6 +50,7 @@
   const available = $derived(distinctClues(buildPool(countries, MODES[mode], filter), MODES[mode]));
   // Une manche ne peut pas dépasser le nombre de pays disponibles.
   const actualLength = $derived(Math.min(length, available));
+  const best = $derived(records.best(mode, length));
 
   // L'Antarctique n'a aucun pays : le proposer n'aurait pas de sens.
   const regionOptions = ['all', ...REGIONS.filter((r) => r !== 'antarctic')] as const;
@@ -75,7 +77,7 @@
 
   <div class="choices">
     <fieldset>
-      <legend>{i18n.t.clueSection}</legend>
+      <legend class="label">{i18n.t.clueSection}</legend>
       <div class="chips chips--wrap">
         {#each MODE_IDS as value (value)}
           <button
@@ -91,7 +93,7 @@
     </fieldset>
 
     <fieldset>
-      <legend>{i18n.t.lengthSection}</legend>
+      <legend class="label">{i18n.t.lengthSection}</legend>
       <div class="chips">
         {#each ROUND_LENGTHS as value (value)}
           <button
@@ -105,7 +107,7 @@
     </fieldset>
 
     <fieldset>
-      <legend>{i18n.t.poolSection}</legend>
+      <legend class="label">{i18n.t.poolSection}</legend>
       <div class="chips chips--wrap">
         {#each ['all', ...TIERS] as const as value (value)}
           <button
@@ -119,7 +121,7 @@
     </fieldset>
 
     <fieldset>
-      <legend>{i18n.t.regionSection}</legend>
+      <legend class="label">{i18n.t.regionSection}</legend>
       <select bind:value={region} aria-label={i18n.t.regionSelectLabel}>
         {#each regionOptions as value (value)}
           <option {value}>{regionLabels[value]}</option>
@@ -129,6 +131,9 @@
   </div>
 
   <footer>
+    <p class="best readout">
+      {#if best}{i18n.t.bestScore(best.score, best.total)}{:else}{i18n.t.noRecordYet}{/if}
+    </p>
     <p class="count" aria-live="polite">
       {#if available === 0}
         {i18n.t.poolEmpty}
@@ -149,17 +154,18 @@
 
 <style>
   .home {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    justify-content: space-between;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 1.25rem;
     block-size: 100%;
     padding: max(1.5rem, env(safe-area-inset-top)) 1.25rem max(1.5rem, env(safe-area-inset-bottom));
-    overflow-y: auto;
+    /* Seuls les réglages défilent : « Jouer » reste sous le pouce, même sur un
+       petit écran où la liste des pools passe sous la ligne de flottaison. */
+    overflow: hidden;
     background: linear-gradient(
       to bottom,
-      color-mix(in oklab, var(--space) 92%, transparent),
-      color-mix(in oklab, var(--space) 70%, transparent)
+      color-mix(in oklab, var(--abysse) 92%, transparent),
+      color-mix(in oklab, var(--abysse) 70%, transparent)
     );
   }
 
@@ -180,17 +186,17 @@
   .lang {
     min-inline-size: 44px;
     min-block-size: 44px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--trait);
     border-radius: 999px;
     background: var(--surface);
-    color: var(--text-dim);
+    color: var(--os-fane);
     font: inherit;
     font-size: 0.85rem;
     cursor: pointer;
 
     &[aria-pressed='true'] {
-      border-color: var(--accent);
-      color: var(--accent-text);
+      border-color: var(--laiton);
+      color: var(--laiton-clair);
     }
   }
 
@@ -201,13 +207,20 @@
   }
 
   .tagline {
-    color: var(--text-dim);
+    color: var(--os-fane);
   }
 
   .choices {
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    min-block-size: 0;
+    padding-block-end: 0.5rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Le dernier réglage s'estompe : on comprend qu'il y a encore à faire
+       défiler, sans ajouter d'ombre ni de flèche. */
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 2rem), transparent);
   }
 
   fieldset {
@@ -218,7 +231,7 @@
 
   legend {
     padding-block-end: 0.5rem;
-    color: var(--text-dim);
+    color: var(--os-fane);
     font-size: 0.8rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -238,10 +251,10 @@
   select {
     /* 44 px : la cible tactile minimale confortable. */
     min-block-size: 44px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--trait);
     border-radius: 999px;
     background: var(--surface);
-    color: var(--text);
+    color: var(--os);
     font: inherit;
     cursor: pointer;
   }
@@ -250,9 +263,9 @@
     padding-inline: 1rem;
 
     &[aria-pressed='true'] {
-      border-color: var(--accent);
-      background: color-mix(in oklab, var(--accent) 20%, var(--surface));
-      color: var(--accent-text);
+      border-color: var(--laiton);
+      background: color-mix(in oklab, var(--laiton) 20%, var(--surface));
+      color: var(--laiton-clair);
     }
   }
 
@@ -265,13 +278,21 @@
   footer {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.4rem;
+    /* Détache visuellement la zone d'action des réglages qui défilent. */
+    padding-block-start: 0.75rem;
+    border-block-start: 1px solid var(--trait);
   }
 
   .count,
   .hint {
-    color: var(--text-dim);
+    color: var(--os-fane);
     font-size: 0.9rem;
+  }
+
+  .best {
+    color: var(--laiton-clair);
+    font-size: 0.8rem;
   }
 
   .hint {
@@ -280,10 +301,11 @@
   }
 
   .play {
+    margin-block-start: 0.35rem;
     padding-block: 0.9rem;
     border-color: transparent;
-    background: var(--accent);
-    color: var(--space);
+    background: var(--laiton);
+    color: var(--abysse);
     font-size: 1.1rem;
     font-weight: 600;
 
