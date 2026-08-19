@@ -186,6 +186,28 @@ chaque question, la pulsation du score sur une bonne réponse, le globe qui
 pivote pour amener le pays attendu au centre. Toutes sont neutralisées sous
 `prefers-reduced-motion`.
 
+## Globe ou planisphère
+
+Deux vues du même jeu, au choix sur l'accueil, mémorisé d'une session à l'autre.
+
+- **Globe** (`src/lib/globe/`) — three.js via globe.gl.
+- **Planisphère** (`src/lib/map/`) — du SVG, sans aucune dépendance : la même
+  géométrie projetée en équirectangulaire, un `<path>` par pays. Le pointage
+  est donc natif, et les micro-États deviennent des cercles bien plus faciles
+  à viser qu'un point sur une sphère.
+
+Les deux exposent la même interface — sélection, survol, surlignage, recentrage
+sur le pays attendu — et se remplacent l'une l'autre sans que le reste du jeu
+le sache.
+
+**Le globe n'est téléchargé que si on le choisit.** three.js représente
+l'essentiel du poids : en planisphère, la page fait 113 Ko compressés au lieu
+de 636 Ko.
+
+Le cadrage de départ s'adapte à l'écran : le monde entier sur un écran large,
+plus rapproché sur un téléphone en portrait, où le monde entier tiendrait dans
+une bande de 200 pixels et un petit pays ferait deux pixels de large.
+
 ## Son
 
 Quatre retours, **entièrement synthétisés** en Web Audio (`src/lib/audio/`) :
@@ -256,6 +278,8 @@ src/App.svelte            écran principal
 - [x] **Phase 2 — MVP jouable** : mode « nom », manches de 10/20/30, filtres de
       pool (notoriété et continent), score, feedback, écran de fin.
 - [x] **Phase 3 — Modes** : drapeau, capitale, monnaie, choix du mode sur l'accueil.
+- [x] **Bonus — Vue planisphère** : la même partie sur une carte plate, en SVG,
+      sans dépendance ; le globe passe en chargement à la demande.
 - [x] **Bonus — Mode « devise »** : la devise nationale dans sa langue d'origine,
       traduite dessous.
 - [x] **Phase 4 — Bascule FR/EN** : interface, noms, capitales et monnaies dans
