@@ -4,6 +4,7 @@
   import { i18n } from '../i18n/i18n.svelte.js';
   import { records } from '../storage/records.svelte.js';
   import { LANGS, LANG_LABELS } from '../i18n/language.js';
+  import SoundToggle from './SoundToggle.svelte';
   import { buildPool } from '../game/pool.js';
   import { MODES } from '../game/modes/index.js';
   import { distinctClues } from '../game/round.js';
@@ -59,6 +60,7 @@
 <section class="home">
   <header>
     <div class="langs">
+      <SoundToggle />
       {#each LANGS as value (value)}
         <button
           type="button"

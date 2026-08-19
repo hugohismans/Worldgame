@@ -69,6 +69,16 @@ export function recordAnswer(round: Round, picked: Iso3 | null): Round {
   return { ...round, answers: [...round.answers, answer] };
 }
 
+/** Nombre de bonnes réponses consécutives à l'instant présent. */
+export function currentStreak(round: Round): number {
+  let streak = 0;
+  for (let i = round.answers.length - 1; i >= 0; i--) {
+    if (!round.answers[i]?.correct) break;
+    streak++;
+  }
+  return streak;
+}
+
 export function summary(round: Round): RoundSummary {
   let bestStreak = 0;
   let streak = 0;

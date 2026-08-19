@@ -1,11 +1,19 @@
 <script lang="ts">
+  import { audio } from './lib/audio/audio.svelte.js';
   import { countries } from './lib/data/countries.js';
   import type { Country, Iso3 } from './lib/data/types.js';
   import GlobeView from './lib/globe/GlobeView.svelte';
   import type { Highlight } from './lib/globe/theme.js';
   import { MODES } from './lib/game/modes/index.js';
   import { buildPool } from './lib/game/pool.js';
-  import { createRound, currentQuestion, isOver, recordAnswer, summary } from './lib/game/round.js';
+  import {
+    createRound,
+    currentQuestion,
+    currentStreak,
+    isOver,
+    recordAnswer,
+    summary,
+  } from './lib/game/round.js';
   import type { ModeId, PoolFilter, Question, Round, RoundLength } from './lib/game/types.js';
   import { records } from './lib/storage/records.svelte.js';
   import GameHud from './lib/ui/GameHud.svelte';
@@ -64,6 +72,8 @@
     const correct = asked.accepted.includes(country.iso3);
     round = recordAnswer(round, country.iso3);
     reveal = { question: asked, picked: country.iso3, correct };
+    // La série fait monter la note : on entend qu'on enchaîne.
+    audio.play(correct ? 'correct' : 'wrong', currentStreak(round));
     // Une bonne réponse s'enchaîne toute seule ; une erreur attend le joueur,
     // le temps qu'il regarde où était le pays.
     if (correct) pending = setTimeout(advance, CORRECT_PAUSE_MS);
@@ -76,6 +86,7 @@
     if (!asked) return;
     round = recordAnswer(round, null);
     reveal = { question: asked, picked: null, correct: false };
+    audio.play('wrong');
   }
 
   let isRecord = $state(false);
@@ -88,6 +99,7 @@
     isRecord = config
       ? records.submit(config.mode, config.length, { score: result.score, total: result.total })
       : false;
+    audio.play(isRecord ? 'record' : 'roundOver');
     screen = 'result';
   }
 

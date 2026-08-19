@@ -49,6 +49,8 @@ export const fr = {
 
   // Manche
   quitRound: 'Quitter la manche',
+  soundOn: 'Couper le son',
+  soundOff: 'Rétablir le son',
   roundProgress: 'Progression de la manche',
   flagToIdentify: 'Drapeau à identifier',
   cluePrefix: 'Trouve',
@@ -116,6 +118,8 @@ export const en: Dictionary = {
   noRecordYet: 'No record here yet.',
 
   quitRound: 'Quit round',
+  soundOn: 'Mute',
+  soundOff: 'Unmute',
   roundProgress: 'Round progress',
   flagToIdentify: 'Flag to identify',
   cluePrefix: 'Find',

@@ -3,6 +3,7 @@
   import { flagUrl } from '../data/flags.js';
   import { ACCEPT_ANY_COUNTRY_OF_THE_ZONE } from '../game/modes/currency.js';
   import { i18n } from '../i18n/i18n.svelte.js';
+  import SoundToggle from './SoundToggle.svelte';
   import type { Question } from '../game/types.js';
 
   interface Props {
@@ -30,6 +31,7 @@
 
   <header>
     <button type="button" class="quit" onclick={onquit} aria-label={i18n.t.quitRound}>✕</button>
+    <div class="sound-slot"><SoundToggle /></div>
     <p class="progress readout" class:progress--pulse={reveal?.correct}>
       <strong>{score}</strong> / {total}
     </p>
@@ -135,6 +137,11 @@
     color: var(--os-fane);
     font-size: 1rem;
     cursor: pointer;
+    pointer-events: auto;
+  }
+
+  /* Le bouton doit rester cliquable à travers l'interface transparente. */
+  .sound-slot {
     pointer-events: auto;
   }
 

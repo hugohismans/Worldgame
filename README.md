@@ -168,6 +168,37 @@ chaque question, la pulsation du score sur une bonne réponse, le globe qui
 pivote pour amener le pays attendu au centre. Toutes sont neutralisées sous
 `prefers-reduced-motion`.
 
+## Son
+
+Quatre retours, **entièrement synthétisés** en Web Audio (`src/lib/audio/`) :
+aucun fichier audio, donc zéro octet ajouté, aucune licence à tracer, et chaque
+paramètre — hauteur, durée, gain, filtre — reste lisible dans `sounds.ts`.
+
+| Son | Ce qu'on entend |
+|---|---|
+| bonne réponse | deux notes qui montent d'une quarte |
+| erreur | une note grave et étouffée (123 Hz, passe-bas 380 Hz) |
+| fin de manche | un arpège de quatre notes (440 · 554 · 659 · 880 Hz) |
+| nouveau record | le même arpège prolongé d'une octave qui traîne |
+
+**La série s'entend** : chaque bonne réponse consécutive monte la note d'un
+demi-ton, jusqu'à une quinte. Aucun écran ne l'annonce.
+
+Deux règles tenues par les tests : sur une manche de trente questions on entend
+le même son trente fois, donc rien ne dépasse un gain de 0,22 ni 350 ms, et
+l'erreur reste douce — un buzzer désagréable fait couper le son.
+
+Le contexte audio n'est ouvert qu'au **premier geste** du joueur : iOS le refuse
+autrement, et une page ouverte dans le métro ne doit pas se mettre à sonner. La
+coupure du son est mémorisée.
+
+**Ce qui n'a pas été fait, et pourquoi.** Le plan prévoyait aussi un ou deux
+fichiers CC0 pour les moments forts. Je ne peux pas écouter un fichier audio :
+en embarquer un reviendrait à livrer un son jamais entendu, sur la foi de ses
+métadonnées. Tout est donc synthétisé — vérifiable, réglable, et sans surprise.
+Pour en ajouter un : déposer le fichier dans `src/assets/`, l'importer, et
+appeler `audio` avec une source de buffer plutôt qu'un oscillateur.
+
 ## Contraintes de conception
 
 - **Accessibilité.** Tout est atteignable au clavier avec un focus visible, les
@@ -211,9 +242,5 @@ src/App.svelte            écran principal
       les deux langues ; détection au premier lancement, choix mémorisé.
 - [x] **Phase 5 — Finition** : direction artistique, animations, meilleurs
       scores par mode et par longueur, mise en page mobile, accessibilité.
-- [ ] Phase 6 — Sound design : retours de jeu uniquement (tap, bonne réponse,
-      erreur, révélation, fin de manche). Sons d'interface **synthétisés** via
-      l'API Web Audio — zéro octet, aucune licence à tracer — et un ou deux
-      fichiers courts sous licence CC0 pour les moments forts. Coupure du son
-      persistée, et pas un bruit avant le premier geste du joueur (iOS refuse
-      d'ouvrir le contexte audio sans interaction).
+- [x] **Phase 6 — Sound design** : quatre retours de jeu synthétisés, série
+      audible, coupure mémorisée, silence total avant le premier geste.

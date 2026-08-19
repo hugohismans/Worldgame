@@ -5,6 +5,7 @@ import { buildPool } from './pool.js';
 import {
   createRound,
   currentQuestion,
+  currentStreak,
   distinctClues,
   isOver,
   recordAnswer,
@@ -131,6 +132,22 @@ describe('déroulement', () => {
     const question = { answer: 'FRA', accepted: ['FRA', 'DEU'], clue: { kind: 'name' as const, name: { fr: 'x', en: 'x' } } };
     const round = recordAnswer({ questions: [question], answers: [] }, 'DEU');
     expect(round.answers[0]?.correct).toBe(true);
+  });
+});
+
+describe('currentStreak', () => {
+  it('compte les bonnes réponses consécutives les plus récentes', () => {
+    const round = play(createRound(pool, nameMode, 5, seeded(1)), (i) => i >= 2);
+    expect(currentStreak(round)).toBe(3);
+  });
+
+  it('retombe à zéro après une erreur', () => {
+    const round = play(createRound(pool, nameMode, 4, seeded(1)), (i) => i !== 3);
+    expect(currentStreak(round)).toBe(0);
+  });
+
+  it('vaut zéro sur une manche vierge', () => {
+    expect(currentStreak(createRound(pool, nameMode, 5, seeded(1)))).toBe(0);
   });
 });
 
