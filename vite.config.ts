@@ -8,9 +8,9 @@ export default defineConfig(({ command, isPreview }) => ({
   base: command === 'build' || isPreview ? '/Worldgame/' : '/',
   plugins: [svelte()],
   build: {
-    // Les drapeaux restent des fichiers à part : inlinés en data-URI, les 180
-    // SVG alourdiraient le bundle initial alors qu'une partie n'en affiche
-    // qu'une poignée.
-    assetsInlineLimit: (file: string) => !file.endsWith('.svg'),
+    // Rien n'est inliné en data-URI : les 180 drapeaux alourdiraient le bundle
+    // initial alors qu'une manche en affiche dix, et les fontes gonfleraient la
+    // feuille de style qui bloque le premier rendu.
+    assetsInlineLimit: 0,
   },
 }))

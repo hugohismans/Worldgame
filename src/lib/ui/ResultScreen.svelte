@@ -60,6 +60,10 @@
 
 <style>
   .result {
+    /* Mobile d'abord, mais un bouton de 1 280 px de large n'aide personne :
+       la colonne se borne et se centre sur grand écran. */
+    inline-size: min(100%, 34rem);
+    margin-inline: auto;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;

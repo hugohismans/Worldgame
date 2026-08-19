@@ -154,6 +154,10 @@
 
 <style>
   .home {
+    /* Mobile d'abord, mais un bouton de 1 280 px de large n'aide personne :
+       la colonne se borne et se centre sur grand écran. */
+    inline-size: min(100%, 34rem);
+    margin-inline: auto;
     display: grid;
     grid-template-rows: auto 1fr auto;
     gap: 1.25rem;
