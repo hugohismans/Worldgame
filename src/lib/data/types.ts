@@ -28,6 +28,12 @@ export interface Currency {
  */
 export type Shape = 'polygon' | 'point';
 
+/** Devise nationale : le texte d'origine et sa traduction. */
+export interface Motto {
+  readonly original: string;
+  readonly translation: Localized;
+}
+
 export interface Country {
   readonly iso3: Iso3;
   /** Code ISO 3166-1 alpha-2, minuscule — sert aussi de nom de fichier drapeau. */
@@ -40,6 +46,8 @@ export interface Country {
   readonly nameWithArticle: Localized;
   readonly capital: Localized | null;
   readonly currencies: readonly Currency[];
+  /** `null` pour les pays sans devise nationale établie. */
+  readonly motto: Motto | null;
   readonly region: RegionId;
   /**
    * `true` si le pays peut être la réponse attendue d'une question

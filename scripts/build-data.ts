@@ -38,6 +38,7 @@ import {
 } from './overrides/currencies.js';
 import { TIER_BY_ISO, TIER_DUPLICATES } from './overrides/tiers.js';
 import { ARTICLE_FR, ENGLISH_THE } from './overrides/articles.js';
+import { MOTTOS } from './overrides/mottos.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CACHE = resolve(ROOT, '.cache');
@@ -181,6 +182,12 @@ function currencyWithArticle(name: string, code: string): string {
   return `${gender === 'f' ? 'la' : 'le'} ${name}`;
 }
 
+function mottoOf(iso3: Iso3): Country['motto'] {
+  const entry = MOTTOS[iso3];
+  if (!entry) return null;
+  return { original: fr(entry.original), translation: { fr: fr(entry.fr), en: entry.en } };
+}
+
 function buildCurrencies(raw: RawCountry): Currency[] {
   const override = CURRENCY_OVERRIDES[raw.cca3];
   const source: [string, { name: string; symbol?: string }][] = override
@@ -260,6 +267,7 @@ async function main(): Promise<void> {
         nameWithArticle: withArticle(iso3, extra.name),
         capital: extra.capital,
         currencies: [],
+        motto: null,
         region: extra.region,
         playable: false,
         tier: null,
@@ -323,6 +331,7 @@ async function main(): Promise<void> {
       nameWithArticle: withArticle(iso3, name),
       capital,
       currencies: buildCurrencies(raw),
+      motto: mottoOf(iso3),
       region,
       playable,
       tier,
@@ -374,12 +383,14 @@ async function main(): Promise<void> {
     );
   }
 
+  const withMotto = countries.filter((c) => c.playable && c.motto);
   const playable = countries.filter((c) => c.playable);
   console.log(`\n${countries.length} entités écrites — ${features.length} polygones`);
   console.log(
     `  jouables : ${playable.length} (${playable.filter((c) => c.shape === 'polygon').length} polygones, ${playable.filter((c) => c.shape === 'point').length} marqueurs)`,
   );
   console.log(`  décor (non jouables) : ${countries.length - playable.length}`);
+  console.log(`  avec devise nationale : ${withMotto.length}`);
   for (const tier of ['common', 'uncommon', 'rare'] as const) {
     console.log(`  notoriété « ${tier} » : ${playable.filter((c) => c.tier === tier).length}`);
   }
