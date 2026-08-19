@@ -58,6 +58,24 @@ relues à la main, à éditer si une donnée est fausse.
 | `tiers.ts` | répartition des 194 pays jouables en trois niveaux de notoriété |
 | `currencies.ts` | noms de monnaies en français, par code ISO 4217 |
 
+### Devises nationales
+
+108 pays ont une devise nationale dans le dataset, soit **103 indices distincts**
+— le Burundi, le Congo et le Tchad partagent « Unité, Travail, Progrès », et
+comme pour les monnaies tous les pays concernés comptent comme justes.
+
+La table `scripts/overrides/mottos.ts` est **curée à la main**. Wikidata expose
+bien les devises (propriété P1451), mais mélangées à des slogans touristiques —
+« Endless discovery » pour le Japon, « Magical Kenya » — et parsemée d'erreurs :
+la devise de l'Azerbaïdjan y était attribuée à l'Équateur et à la Tanzanie.
+Seuls les **textes originaux** en sont extraits, pour ne pas recopier à la main
+de l'arabe ou du géorgien ; le tri et les traductions sont manuels.
+
+Les 86 pays restants n'y figurent pas, soit qu'ils n'aient pas de devise
+officielle (Japon, Italie, Australie), soit que je n'aie pas pu la vérifier.
+Mieux vaut 108 devises sûres que 194 dont un tiers de slogans d'agence de
+voyage. Pour en ajouter une : une entrée dans la table, et `npm run build:data`.
+
 ### Choix de modélisation
 
 - **Jouable ou décor.** Un pays est `playable` s'il est indépendant et membre de
@@ -238,6 +256,8 @@ src/App.svelte            écran principal
 - [x] **Phase 2 — MVP jouable** : mode « nom », manches de 10/20/30, filtres de
       pool (notoriété et continent), score, feedback, écran de fin.
 - [x] **Phase 3 — Modes** : drapeau, capitale, monnaie, choix du mode sur l'accueil.
+- [x] **Bonus — Mode « devise »** : la devise nationale dans sa langue d'origine,
+      traduite dessous.
 - [x] **Phase 4 — Bascule FR/EN** : interface, noms, capitales et monnaies dans
       les deux langues ; détection au premier lancement, choix mémorisé.
 - [x] **Phase 5 — Finition** : direction artistique, animations, meilleurs
