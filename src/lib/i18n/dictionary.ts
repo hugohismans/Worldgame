@@ -15,6 +15,9 @@ export const fr = {
   lengthSection: 'Questions',
   poolSection: 'Pays',
   regionSection: 'Zone',
+  viewSection: 'Carte',
+  viewGlobe: 'Globe',
+  viewMap: 'Planisphère',
   regionSelectLabel: 'Continent',
   play: 'Jouer',
 
@@ -90,6 +93,9 @@ export const en: Dictionary = {
   lengthSection: 'Questions',
   poolSection: 'Countries',
   regionSection: 'Region',
+  viewSection: 'Map',
+  viewGlobe: 'Globe',
+  viewMap: 'Flat map',
   regionSelectLabel: 'Continent',
   play: 'Play',
 

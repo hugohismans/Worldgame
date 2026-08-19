@@ -5,6 +5,7 @@
   import { records } from '../storage/records.svelte.js';
   import { LANGS, LANG_LABELS } from '../i18n/language.js';
   import SoundToggle from './SoundToggle.svelte';
+  import { VIEWS, view } from '../storage/view.svelte.js';
   import { buildPool } from '../game/pool.js';
   import { MODES } from '../game/modes/index.js';
   import { distinctClues } from '../game/round.js';
@@ -29,6 +30,11 @@
     common: i18n.t.tierCommon,
     uncommon: i18n.t.tierUncommon,
     rare: i18n.t.tierRare,
+  });
+
+  const viewLabels = $derived<Record<(typeof VIEWS)[number], string>>({
+    globe: i18n.t.viewGlobe,
+    map: i18n.t.viewMap,
   });
 
   const regionLabels = $derived<Record<RegionId | 'all', string>>({
@@ -118,6 +124,20 @@
             class="chip"
             aria-pressed={tier === value}
             onclick={() => (tier = value)}>{tierLabels[value]}</button
+          >
+        {/each}
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend class="label">{i18n.t.viewSection}</legend>
+      <div class="chips">
+        {#each VIEWS as value (value)}
+          <button
+            type="button"
+            class="chip"
+            aria-pressed={view.current === value}
+            onclick={() => view.set(value)}>{viewLabels[value]}</button
           >
         {/each}
       </div>

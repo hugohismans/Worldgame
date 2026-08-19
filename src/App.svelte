@@ -2,7 +2,9 @@
   import { audio } from './lib/audio/audio.svelte.js';
   import { countries } from './lib/data/countries.js';
   import type { Country, Iso3 } from './lib/data/types.js';
-  import GlobeView from './lib/globe/GlobeView.svelte';
+  import type { Component } from 'svelte';
+  import MapView from './lib/map/MapView.svelte';
+  import { view } from './lib/storage/view.svelte.js';
   import type { Highlight } from './lib/globe/theme.js';
   import { MODES } from './lib/game/modes/index.js';
   import { buildPool } from './lib/game/pool.js';
@@ -41,6 +43,14 @@
    * question à laquelle le joueur vient de répondre, sans quoi l'interface
    * disparaîtrait après la dernière réponse.
    */
+  /** Ce que globe et planisphère savent afficher, à l'identique. */
+  interface GeoProps {
+    onselect?: (country: Country) => void;
+    highlights?: ReadonlyMap<Iso3, Highlight>;
+    focus?: Iso3 | null;
+    selectable?: boolean;
+  }
+
   const question = $derived(reveal?.question ?? (round ? currentQuestion(round) : undefined));
 
   const highlights = $derived.by(() => {
@@ -91,6 +101,19 @@
 
   let isRecord = $state(false);
 
+  /**
+   * Le globe embarque three.js — l'essentiel du poids de l'application. Il
+   * n'est téléchargé que si le joueur le choisit : sur planisphère, la page
+   * reste légère.
+   */
+  let GlobeView = $state<Component<GeoProps> | null>(null);
+  $effect(() => {
+    if (view.current !== 'globe' || GlobeView) return;
+    void import('./lib/globe/GlobeView.svelte').then((module) => {
+      GlobeView = module.default as unknown as Component<GeoProps>;
+    });
+  });
+
   function advance(): void {
     clearTimeout(pending);
     reveal = null;
@@ -118,12 +141,21 @@
 </script>
 
 <main>
-  <GlobeView
-    onselect={select}
-    {highlights}
-    focus={reveal && !reveal.correct ? reveal.question.answer : null}
-    selectable={screen === 'playing' && reveal === null}
-  />
+  {#if view.current === 'map'}
+    <MapView
+      onselect={select}
+      {highlights}
+      focus={reveal && !reveal.correct ? reveal.question.answer : null}
+      selectable={screen === 'playing' && reveal === null}
+    />
+  {:else if GlobeView}
+    <GlobeView
+      onselect={select}
+      {highlights}
+      focus={reveal && !reveal.correct ? reveal.question.answer : null}
+      selectable={screen === 'playing' && reveal === null}
+    />
+  {/if}
 
   <div class="overlay" class:overlay--pass-through={screen === 'playing'}>
     {#if screen === 'home'}
