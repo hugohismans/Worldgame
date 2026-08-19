@@ -237,3 +237,47 @@ describe('modes', () => {
     expect(round.questions).toHaveLength(1);
   });
 });
+
+describe('mode devise', () => {
+  const world = buildPool(countries, nameMode, { tier: 'all', region: 'all' });
+
+  it('ne retient que les pays dont la devise est établie', () => {
+    const pool = buildPool(countries, MODES.motto, { tier: 'all', region: 'all' });
+    expect(pool).toHaveLength(108);
+    expect(pool.every((c) => c.motto !== null)).toBe(true);
+  });
+
+  it('montre la devise dans sa langue d’origine', () => {
+    const brazil = world.find((c) => c.iso3 === 'BRA') as Country;
+    const question = MODES.motto.question(brazil, world);
+    expect(question.clue).toEqual({
+      kind: 'motto',
+      original: 'Ordem e Progresso',
+      translation: { fr: 'Ordre et Progrès', en: 'Order and Progress' },
+    });
+  });
+
+  it('accepte les pays qui partagent la même devise', () => {
+    const chad = world.find((c) => c.iso3 === 'TCD') as Country;
+    const accepted = MODES.motto.question(chad, world).accepted;
+    // « Unité, Travail, Progrès » : Burundi, Congo et Tchad.
+    expect([...accepted].sort()).toEqual(['BDI', 'COG', 'TCD']);
+  });
+
+  it('garde une seule réponse pour une devise unique', () => {
+    const france = world.find((c) => c.iso3 === 'FRA') as Country;
+    expect(MODES.motto.question(france, world).accepted).toEqual(['FRA']);
+  });
+
+  it('ne pose pas deux fois la même devise dans une manche', () => {
+    const pool = buildPool(countries, MODES.motto, { tier: 'all', region: 'all' });
+    const round = createRound(pool, MODES.motto, 30, seeded(9), world);
+    const mottos = round.questions.map((q) => (q.clue.kind === 'motto' ? q.clue.original : ''));
+    expect(new Set(mottos).size).toBe(mottos.length);
+  });
+
+  it('compte 103 indices distincts pour 108 pays', () => {
+    const pool = buildPool(countries, MODES.motto, { tier: 'all', region: 'all' });
+    expect(distinctClues(pool, MODES.motto)).toBe(103);
+  });
+});

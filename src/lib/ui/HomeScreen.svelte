@@ -21,6 +21,7 @@
     flag: { name: i18n.t.modeFlag, hint: i18n.t.modeFlagHint },
     capital: { name: i18n.t.modeCapital, hint: i18n.t.modeCapitalHint },
     currency: { name: i18n.t.modeCurrency, hint: i18n.t.modeCurrencyHint },
+    motto: { name: i18n.t.modeMotto, hint: i18n.t.modeMottoHint },
   });
 
   const tierLabels = $derived<Record<Tier | 'all', string>>({

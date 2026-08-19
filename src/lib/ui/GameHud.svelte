@@ -22,6 +22,15 @@
   const { question, position, total, score, reveal, onnext, onskip, onquit }: Props = $props();
 
   const expected = $derived(countryOf(question.answer));
+
+  /**
+   * Une devise déjà écrite dans la langue du joueur n'a pas besoin d'être
+   * « traduite » : « Un Peuple, Un But, Une Foi » et « Un peuple, un but, une
+   * foi » sont le même texte, à la casse et aux tirets près.
+   */
+  const sameText = (a: string, b: string): boolean =>
+    a.toLocaleLowerCase().replace(/[\s,;–—-]+/g, ' ').trim() ===
+    b.toLocaleLowerCase().replace(/[\s,;–—-]+/g, ' ').trim();
   const picked = $derived(reveal?.picked ? countryOf(reveal.picked) : undefined);
 </script>
 
@@ -64,9 +73,18 @@
           {i18n.t.cluePrefix} <strong>{i18n.of(question.clue.name)}</strong>
         {:else if question.clue.kind === 'capital'}
           {i18n.t.clueCapital} <strong>{i18n.of(question.clue.capital)}</strong>
-        {:else}
+        {:else if question.clue.kind === 'currency'}
           {ACCEPT_ANY_COUNTRY_OF_THE_ZONE ? i18n.t.clueCurrencyAny : i18n.t.clueCurrencyOne}
           <strong>{i18n.of(question.clue.currency)}</strong>
+        {:else}
+          {question.accepted.length > 1 ? i18n.t.clueMottoAny : i18n.t.clueMottoOne}
+          <!-- dir="auto" : sans lui, une devise en arabe s'affiche à l'envers. -->
+          <strong class="motto" dir="auto">{i18n.t.quote(question.clue.original)}</strong>
+          {#if !sameText(i18n.of(question.clue.translation), question.clue.original)}
+            <!-- La traduction rend le mode jouable quand la devise n'est ni en
+                 français ni en anglais ; inutile quand c'est le même texte. -->
+            <span class="translation">{i18n.of(question.clue.translation)}</span>
+          {/if}
         {/if}
       </p>
     {/if}
@@ -253,6 +271,19 @@
     & strong {
       color: var(--laiton-clair);
     }
+  }
+
+  .motto {
+    display: block;
+    text-wrap: balance;
+  }
+
+  .translation {
+    display: block;
+    margin-block-start: 0.15rem;
+    color: var(--os-fane);
+    font-size: 0.8em;
+    font-style: italic;
   }
 
   .feedback-slot {

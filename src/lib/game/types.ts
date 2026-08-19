@@ -1,7 +1,7 @@
 import type { Country, Iso3, Localized, RegionId, Tier } from '../data/types.js';
 
 /** Un mode de jeu = une façon de poser la question. */
-export const MODE_IDS = ['name', 'flag', 'capital', 'currency'] as const;
+export const MODE_IDS = ['name', 'flag', 'capital', 'currency', 'motto'] as const;
 export type ModeId = (typeof MODE_IDS)[number];
 
 /**
@@ -13,7 +13,9 @@ export type Clue =
   /** Le drapeau seul, sans texte : `iso2` désigne le fichier SVG local. */
   | { readonly kind: 'flag'; readonly iso2: string }
   | { readonly kind: 'capital'; readonly capital: Localized }
-  | { readonly kind: 'currency'; readonly currency: Localized };
+  | { readonly kind: 'currency'; readonly currency: Localized }
+  /** La devise nationale, montrée dans sa langue d'origine puis traduite. */
+  | { readonly kind: 'motto'; readonly original: string; readonly translation: Localized };
 
 export interface Question {
   /** Le pays visé. */
