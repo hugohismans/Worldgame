@@ -1,24 +1,59 @@
 import type { CountryFeature } from '../data/types.js';
 
 /**
- * Projection équirectangulaire : la longitude devient l'abscisse, la latitude
- * l'ordonnée. C'est la projection du planisphère scolaire — elle étire les
- * hautes latitudes, mais elle garde les positions relatives lisibles et se
- * calcule en une ligne, sans bibliothèque de cartographie.
+ * Projection de Mercator, celle des applications de cartes.
+ *
+ * Elle est **conforme** : les formes locales sont justes, un pays n'y paraît ni
+ * étiré ni aplati. C'est ce qui la rend familière, là où une équirectangulaire
+ * — longitude en abscisse, latitude en ordonnée — double les distances
+ * est-ouest dès 60° de latitude et écrase visuellement l'Europe et la Russie.
+ *
+ * Rançon connue : les aires enflent vers les pôles, le Groenland y paraît
+ * énorme. C'est le compromis qu'accepte tout le monde depuis Google Maps.
  */
 
-/** Unités de dessin par degré. 10 donne un canevas de 3600 × 1800. */
+/** Unités de dessin par degré de longitude. 10 donne un canevas de 3600 de large. */
 const SCALE = 10;
 
-export const WORLD = { width: 360 * SCALE, height: 180 * SCALE } as const;
+/**
+ * Latitude de coupure. Au-delà, Mercator part à l'infini ; à 85,051°, le monde
+ * forme exactement un carré — c'est la convention du web.
+ */
+export const MAX_LATITUDE = 85.05112878;
 
-/** Le cadre garde toujours les proportions du monde : deux fois plus large que haut. */
+/**
+ * Le canevas s'arrête à la bande habitée. Poussé jusqu'à ses limites
+ * mathématiques, Mercator réserverait un tiers de la hauteur à un océan austral
+ * vide : le nord du Groenland est à 83,6°, la pointe du Chili à 56° sud.
+ */
+const NORTH_EDGE = 84;
+const SOUTH_EDGE = -58;
+
+const RADIANS = Math.PI / 180;
+
+/** L'ordonnée de Mercator, en radians, avant mise à l'échelle. */
+function mercatorY(lat: number): number {
+  const clamped = Math.max(-MAX_LATITUDE, Math.min(MAX_LATITUDE, lat));
+  return Math.log(Math.tan(Math.PI / 4 + (clamped * RADIANS) / 2));
+}
+
+const TOP = mercatorY(NORTH_EDGE);
+const BOTTOM = mercatorY(SOUTH_EDGE);
+
+export const WORLD = {
+  width: 360 * SCALE,
+  height: ((TOP - BOTTOM) / (2 * Math.PI)) * 360 * SCALE,
+} as const;
+
+/** Le cadre garde toujours les proportions du monde : ici, un carré. */
 export const WORLD_ASPECT = WORLD.width / WORLD.height;
 
-export const project = (lng: number, lat: number): [number, number] => [
-  (lng + 180) * SCALE,
-  (90 - lat) * SCALE,
-];
+export function project(lng: number, lat: number): [number, number] {
+  return [
+    (lng + 180) * SCALE,
+    ((TOP - mercatorY(lat)) / (2 * Math.PI)) * 360 * SCALE,
+  ];
+}
 
 /** Le tracé SVG d'un pays, tous ses anneaux mis bout à bout. */
 export function pathOf(geometry: CountryFeature['geometry']): string {
@@ -53,20 +88,6 @@ export interface Box {
 export const MIN_WIDTH = 0.1;
 
 /**
- * Cadrage initial : on cherche à ce que la carte occupe environ 60 % de la
- * hauteur disponible. Sur un écran large, cela laisse le monde entier ; sur un
- * téléphone en portrait, le monde entier tiendrait dans une bande où un petit
- * pays ferait deux pixels, donc on part plus près.
- */
-export function initialBox(width: number, height: number): Box {
-  if (width <= 0 || height <= 0) return { x: 0, y: 0, width: WORLD.width, height: WORLD.height };
-  const scale = (0.6 * height) / WORLD.height;
-  const boxWidth = Math.min(WORLD.width, width / scale);
-  // Centré sur l'Europe et l'Afrique : le point de départ le plus neutre.
-  return boxAround(10, 15, boxWidth);
-}
-
-/**
  * Ramène le cadre dans le monde : on peut zoomer et se déplacer, jamais sortir
  * de la carte ni la voir se répéter.
  */
@@ -91,14 +112,29 @@ export function boxForBounds(
   aspect: number = WORLD_ASPECT,
 ): Box {
   const [west, south, east, north] = bounds;
-  const spanX = (east - west) * SCALE;
-  const spanY = (north - south) * SCALE;
+  // En Mercator, l'abscisse ne dépend que de la longitude et l'ordonnée que de
+  // la latitude : les coins projetés suffisent à encadrer le pays.
+  const [left, top] = project(west, north);
+  const [right, bottom] = project(east, south);
+  const spanX = right - left;
+  const spanY = bottom - top;
   // Trois fois la taille du pays : on le voit en entier, avec son voisinage.
   const width = Math.max(spanX * 3, spanY * 3 * aspect, MIN_WIDTH * 6);
-  return boxAround((west + east) / 2, (south + north) / 2, width, aspect);
+  return boxAroundPoint((left + right) / 2, (top + bottom) / 2, width, aspect);
 }
 
-/** Le cadre centré sur un point, à une largeur donnée. */
+/** Le cadre centré sur un point déjà projeté. */
+export function boxAroundPoint(
+  x: number,
+  y: number,
+  width: number,
+  aspect: number = WORLD_ASPECT,
+): Box {
+  const height = width / aspect;
+  return clampBox({ x: x - width / 2, y: y - height / 2, width, height }, aspect);
+}
+
+/** Le cadre centré sur un point géographique, à une largeur donnée. */
 export function boxAround(
   lng: number,
   lat: number,
@@ -106,6 +142,5 @@ export function boxAround(
   aspect: number = WORLD_ASPECT,
 ): Box {
   const [x, y] = project(lng, lat);
-  const height = width / aspect;
-  return clampBox({ x: x - width / 2, y: y - height / 2, width, height }, aspect);
+  return boxAroundPoint(x, y, width, aspect);
 }

@@ -9,7 +9,6 @@
     boxAround,
     boxForBounds,
     clampBox,
-    initialBox,
     pathOf,
     project,
     type Box,
@@ -45,6 +44,8 @@
   // Le cadre garde les proportions du monde ; l'écran le laisse entier et
   // comble le reste (`meet`), sans quoi un téléphone en portrait n'en verrait
   // qu'une bande verticale.
+  // On démarre sur le monde entier, comme un planisphère mural : partir plus
+  // près, sur un téléphone en portrait, laisserait le pays demandé hors champ.
   let box = $state<Box>({ x: 0, y: 0, width: WORLD.width, height: WORLD.height });
   let hovered = $state<Iso3 | null>(null);
   let viewport = $state({ width: 0, height: 0 });
@@ -189,15 +190,6 @@
     return () => observer.disconnect();
   });
 
-  // Cadrage de départ, une seule fois, quand on connaît la taille de l'écran.
-  let framed = false;
-  $effect(() => {
-    if (framed || !svg) return;
-    const rect = svg.getBoundingClientRect();
-    if (rect.width === 0) return;
-    framed = true;
-    box = initialBox(rect.width, rect.height);
-  });
 
   /** Le cadrage du joueur avant une révélation, pour le lui rendre après. */
   let boxBeforeFocus: Box | null = null;
@@ -265,7 +257,15 @@
   onpointercancel={onpointerup}
   {onwheel}
 >
-  <rect x="0" y="0" width={WORLD.width} height={WORLD.height} fill={GLOBE_COLORS.ocean} />
+  <!-- L'océan déborde du canevas : l'écran, lui, montre au-delà de ses bords,
+       et laisser du vide là où il y a de l'eau ferait un trou noir en bas. -->
+  <rect
+    x={-WORLD.width}
+    y={-WORLD.height}
+    width={WORLD.width * 3}
+    height={WORLD.height * 3}
+    fill={GLOBE_COLORS.ocean}
+  />
 
   <!-- La grille est un décor : elle ne doit jamais intercepter un clic. -->
   <g

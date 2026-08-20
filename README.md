@@ -198,9 +198,19 @@ Deux vues du même jeu, au choix sur l'accueil, mémorisé d'une session à l'au
 
 - **Globe** (`src/lib/globe/`) — three.js via globe.gl.
 - **Planisphère** (`src/lib/map/`) — du SVG, sans aucune dépendance : la même
-  géométrie projetée en équirectangulaire, un `<path>` par pays. Le pointage
-  est donc natif, et les micro-États deviennent des cercles bien plus faciles
-  à viser qu'un point sur une sphère.
+  géométrie projetée en **Mercator**, un `<path>` par pays. Le pointage est
+  donc natif, et les micro-États deviennent des cercles bien plus faciles à
+  viser qu'un point sur une sphère.
+
+  Mercator est **conforme** : les formes locales sont justes, aucun pays n'y
+  paraît étiré. Une équirectangulaire, plus simple à écrire, double les
+  distances est-ouest dès 60° de latitude et aplatit visiblement l'Europe et la
+  Russie. Rançon connue : les aires enflent vers les pôles, le Groenland y
+  paraît énorme — le compromis qu'accepte tout le monde depuis Google Maps.
+  Le canevas s'arrête à 84° nord et 58° sud, la bande habitée : poussé à ses
+  limites, Mercator réserverait un tiers de sa hauteur à un océan austral vide.
+  La carte démarre sur le monde entier, y compris en portrait : partir plus
+  près laisserait le pays demandé hors champ.
 
 Les deux exposent la même interface — sélection, survol, surlignage, recentrage
 sur le pays attendu — et se remplacent l'une l'autre sans que le reste du jeu

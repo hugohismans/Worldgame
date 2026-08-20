@@ -1,23 +1,53 @@
 import { describe, expect, it } from 'vitest';
+import type { Box } from './projection.js';
 import {
   MIN_WIDTH,
   WORLD,
   boxAround,
   boxForBounds,
   clampBox,
-  initialBox,
   pathOf,
   project,
 } from './projection.js';
 
 describe('projection', () => {
-  it('place le méridien de Greenwich et l’équateur au centre', () => {
-    expect(project(0, 0)).toEqual([WORLD.width / 2, WORLD.height / 2]);
+  it('place le méridien de Greenwich au centre', () => {
+    expect(project(0, 0)[0]).toBeCloseTo(WORLD.width / 2);
   });
 
-  it('place les coins du monde aux coins du canevas', () => {
-    expect(project(-180, 90)).toEqual([0, 0]);
-    expect(project(180, -90)).toEqual([WORLD.width, WORLD.height]);
+  it('cale le canevas sur la bande habitée', () => {
+    // Le nord du Groenland en haut, la pointe du Chili bien avant le bas.
+    expect(project(-180, 84)).toEqual([0, expect.closeTo(0, 6)]);
+    expect(project(180, -58)[0]).toBeCloseTo(WORLD.width);
+    expect(project(180, -58)[1]).toBeCloseTo(WORLD.height);
+    expect(project(0, -56)[1]).toBeLessThan(WORLD.height);
+  });
+
+  it('reste plus large que haut', () => {
+    // Poussé à ses limites, Mercator ferait un carré dont un tiers d'océan vide.
+    expect(WORLD.width / WORLD.height).toBeGreaterThan(1.3);
+  });
+
+  it('borne les latitudes extrêmes au lieu de partir à l’infini', () => {
+    // Au-delà du bord du canevas, mais fini : rien d'habité ne va si haut.
+    expect(Number.isFinite(project(0, 89.9)[1])).toBe(true);
+    expect(Number.isFinite(project(0, 90)[1])).toBe(true);
+    expect(Number.isFinite(project(0, -90)[1])).toBe(true);
+  });
+
+  it('espace les parallèles de plus en plus vers les pôles', () => {
+    // La signature de Mercator : c'est ce qui redresse les formes.
+    const equateurA30 = project(0, 0)[1] - project(0, 30)[1];
+    const de30A60 = project(0, 30)[1] - project(0, 60)[1];
+    expect(de30A60).toBeGreaterThan(equateurA30);
+  });
+
+  it('garde les formes localement justes', () => {
+    // À 60° de latitude, un degré de longitude vaut la moitié d'un degré de
+    // latitude au sol : la projection doit refléter ce rapport.
+    const dx = project(1, 60)[0] - project(0, 60)[0];
+    const dy = project(0, 60)[1] - project(0, 61)[1];
+    expect(dy / dx).toBeCloseTo(2, 1);
   });
 
   it('trace un polygone fermé', () => {
@@ -32,29 +62,6 @@ describe('projection', () => {
       coordinates: [[[[0, 0], [1, 0], [1, 1]]], [[[5, 5], [6, 5], [6, 6]]]],
     });
     expect(d.match(/M/g)).toHaveLength(2);
-  });
-});
-
-describe('cadrage initial', () => {
-  it('laisse le monde entier sur un écran large', () => {
-    expect(initialBox(1280, 800).width).toBe(WORLD.width);
-  });
-
-  it('se rapproche sur un téléphone en portrait', () => {
-    // Sinon la carte tiendrait dans une bande où un petit pays ferait deux pixels.
-    const box = initialBox(393, 660);
-    expect(box.width).toBeLessThan(WORLD.width);
-    expect(box.width).toBeGreaterThan(WORLD.width / 4);
-  });
-
-  it('reste dans le monde', () => {
-    const box = initialBox(393, 660);
-    expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(WORLD.width);
-  });
-
-  it('ne casse pas sur une taille nulle', () => {
-    expect(initialBox(0, 0).width).toBe(WORLD.width);
   });
 });
 
@@ -82,8 +89,9 @@ describe('cadrage', () => {
 
   it('centre sur un point donné', () => {
     const box = boxAround(0, 0, 1800, 2);
-    expect(box.x + box.width / 2).toBeCloseTo(WORLD.width / 2);
-    expect(box.y + box.height / 2).toBeCloseTo(WORLD.height / 2);
+    const [x, y] = project(0, 0);
+    expect(box.x + box.width / 2).toBeCloseTo(x);
+    expect(box.y + box.height / 2).toBeCloseTo(y);
   });
 
   it('recentre sans sortir du monde près d’un bord', () => {
@@ -98,6 +106,18 @@ describe('cadrage d’un pays', () => {
   const SAINT_MARIN = [12.38563, 43.89206, 12.49239, 43.98257] as const;
   const VATICAN = [12.45271, 41.90275, 12.45403, 41.90391] as const;
   const RUSSIE = [-180, 41.19, 180, 81.85] as const;
+
+  /** Le pays tient-il en entier dans le cadre ? */
+  const contient = (box: Box, bounds: readonly [number, number, number, number]): boolean => {
+    const [left, top] = project(bounds[0], bounds[3]);
+    const [right, bottom] = project(bounds[2], bounds[1]);
+    return (
+      left >= box.x &&
+      right <= box.x + box.width &&
+      top >= box.y &&
+      bottom <= box.y + box.height
+    );
+  };
 
   it('serre le cadre sur un micro-État', () => {
     const box = boxForBounds(SAINT_MARIN);
@@ -118,8 +138,7 @@ describe('cadrage d’un pays', () => {
   it('tient compte de la hauteur, pas seulement de la largeur', () => {
     // Un pays étroit mais très étiré du nord au sud doit tenir en entier.
     const chili = [-75, -56, -66, -17] as const;
-    const box = boxForBounds(chili);
-    expect(box.height / 10).toBeGreaterThan(39);
+    expect(contient(boxForBounds(chili), chili)).toBe(true);
   });
 
   it('reste dans le monde même au bord', () => {
