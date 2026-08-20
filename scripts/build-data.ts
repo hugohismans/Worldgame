@@ -49,11 +49,21 @@ const FLAG_SRC = resolve(ROOT, 'node_modules/flag-icons/flags/4x3');
 const SOURCES = {
   naturalEarth:
     'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson',
+  /** Le 1:10m ne sert qu'aux micro-États, absents du 1:110m. */
+  naturalEarthDetailed:
+    'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson',
   countries: 'https://raw.githubusercontent.com/mledoze/countries/master/countries.json',
 } as const;
 
 /** Précision des coordonnées conservées : 3 décimales ≈ 110 m, largement au-delà du 1:110m. */
 const COORD_PRECISION = 3;
+
+/**
+ * Les micro-États, eux, tiennent dans quelques centaines de mètres : Monaco
+ * fait 2 km de large et le Vatican 400 m. À 3 décimales, leurs frontières
+ * deviendraient un escalier. On les garde à 5 décimales (≈ 1 m).
+ */
+const TINY_COORD_PRECISION = 5;
 
 // --- sources brutes (typage minimal, on ne lit que ce qu'on utilise) ---
 
@@ -105,10 +115,41 @@ const round = (n: number): number => Number(n.toFixed(COORD_PRECISION));
 /** Apostrophe typographique : « l'Iran » et « Côte d'Ivoire » s'écrivent avec ’. */
 const fr = (text: string): string => text.replace(/'/g, '\u2019');
 
-function roundCoords(input: unknown): unknown {
-  if (typeof input === 'number') return round(input);
-  if (Array.isArray(input)) return input.map(roundCoords);
+function roundCoords(input: unknown, precision = COORD_PRECISION): unknown {
+  if (typeof input === 'number') return Number(input.toFixed(precision));
+  if (Array.isArray(input)) return input.map((item) => roundCoords(item, precision));
   throw new Error('coordonnées inattendues');
+}
+
+/** Les extrêmes d'une géométrie : [ouest, sud, est, nord]. */
+function boundingBox(geometry: CountryFeature['geometry']): [number, number, number, number] {
+  let west = 180;
+  let south = 90;
+  let east = -180;
+  let north = -90;
+  const visit = (input: unknown): void => {
+    if (Array.isArray(input) && typeof input[0] === 'number' && typeof input[1] === 'number') {
+      west = Math.min(west, input[0]);
+      east = Math.max(east, input[0]);
+      south = Math.min(south, input[1]);
+      north = Math.max(north, input[1]);
+      return;
+    }
+    if (Array.isArray(input)) input.forEach(visit);
+  };
+  visit(geometry.coordinates);
+  return [west, south, east, north];
+}
+
+/**
+ * L'ISO d'un polygone, ou `null` s'il n'en a pas. Le 1:10m contient des
+ * entités sans code — zones tampons, bancs disputés, bases militaires — qui
+ * ne concernent pas le jeu.
+ */
+function isoOrNull(props: NeProperties): Iso3 | null {
+  if (props.ISO_A3 && props.ISO_A3 !== '-99') return props.ISO_A3;
+  if (props.ISO_A3_EH && props.ISO_A3_EH !== '-99') return props.ISO_A3_EH;
+  return NE_ISO_FIXES[props.NAME] ?? null;
 }
 
 /** Résout l'ISO d'un polygone Natural Earth, `-99` compris. */
@@ -211,9 +252,10 @@ function buildCurrencies(raw: RawCountry): Currency[] {
 }
 
 async function main(): Promise<void> {
-  const [neText, rawText] = await Promise.all([
+  const [neText, rawText, detailedText] = await Promise.all([
     fetchCached('ne_110m_admin_0_countries.geojson', SOURCES.naturalEarth),
     fetchCached('countries.json', SOURCES.countries),
+    fetchCached('ne_10m_admin_0_countries.geojson', SOURCES.naturalEarthDetailed),
   ]);
 
   const ne = JSON.parse(neText) as {
@@ -228,6 +270,7 @@ async function main(): Promise<void> {
   // --- géométries ---
   const features: CountryFeature[] = [];
   const centroidByIso = new Map<Iso3, [number, number]>();
+  const boxByIso = new Map<Iso3, [number, number, number, number]>();
   const populationByIso = new Map<Iso3, number>();
   for (const f of ne.features) {
     const iso3 = isoOfFeature(f.properties);
@@ -239,7 +282,28 @@ async function main(): Promise<void> {
     } as CountryFeature['geometry'];
     features.push({ type: 'Feature', properties: { iso3 }, geometry });
     centroidByIso.set(iso3, polygonCentroid(geometry));
+    boxByIso.set(iso3, boundingBox(geometry));
     if (typeof f.properties.POP_EST === 'number') populationByIso.set(iso3, f.properties.POP_EST);
+  }
+
+  // --- micro-États : leur géométrie n'existe qu'au 1:10m ---
+  const detailed = JSON.parse(detailedText) as {
+    features: { properties: NeProperties; geometry: CountryFeature['geometry'] }[];
+  };
+  const sovereign = new Set(
+    raws.filter((c) => c.independent === true && c.unMember === true).map((c) => c.cca3),
+  );
+  let tinyCount = 0;
+  for (const f of detailed.features) {
+    const iso3 = isoOrNull(f.properties);
+    if (iso3 === null || !sovereign.has(iso3) || centroidByIso.has(iso3)) continue;
+    const geometry = {
+      type: f.geometry.type,
+      coordinates: roundCoords(f.geometry.coordinates, TINY_COORD_PRECISION),
+    } as CountryFeature['geometry'];
+    features.push({ type: 'Feature', properties: { iso3 }, geometry });
+    boxByIso.set(iso3, boundingBox(geometry));
+    tinyCount++;
   }
 
   // --- pays ---
@@ -267,6 +331,7 @@ async function main(): Promise<void> {
         nameWithArticle: withArticle(iso3, extra.name),
         capital: extra.capital,
         currencies: [],
+        bounds: boxByIso.get(iso3) ?? null,
         motto: null,
         region: extra.region,
         playable: false,
@@ -331,6 +396,7 @@ async function main(): Promise<void> {
       nameWithArticle: withArticle(iso3, name),
       capital,
       currencies: buildCurrencies(raw),
+      bounds: boxByIso.get(iso3) ?? null,
       motto: mottoOf(iso3),
       region,
       playable,
@@ -391,6 +457,7 @@ async function main(): Promise<void> {
   );
   console.log(`  décor (non jouables) : ${countries.length - playable.length}`);
   console.log(`  avec devise nationale : ${withMotto.length}`);
+  console.log(`  micro-États tracés au 1:10m : ${tinyCount}`);
   for (const tier of ['common', 'uncommon', 'rare'] as const) {
     console.log(`  notoriété « ${tier} » : ${playable.filter((c) => c.tier === tier).length}`);
   }

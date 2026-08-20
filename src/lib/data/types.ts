@@ -22,9 +22,10 @@ export interface Currency {
 }
 
 /**
- * Comment le pays est représenté sur le globe.
- * - `polygon` : présent dans la géométrie Natural Earth 110m.
- * - `point`   : trop petit pour exister en 110m, rendu comme marqueur cliquable.
+ * Comment le pays se signale **de loin**.
+ * - `polygon` : visible à la résolution 1:110m.
+ * - `point`   : trop petit pour s'y voir, donc marqué d'un point. Sa géométrie
+ *   fine existe quand même (1:10m) et prend le relais dès qu'on zoome assez.
  */
 export type Shape = 'polygon' | 'point';
 
@@ -60,6 +61,12 @@ export interface Country {
   readonly tier: Tier | null;
   /** Centre du pays en `[longitude, latitude]` — recentrage caméra et marqueurs. */
   readonly center: readonly [number, number];
+  /**
+   * Les extrêmes du pays, `[ouest, sud, est, nord]`. C'est ce qui permet de
+   * cadrer un pays à sa taille : le Vatican et la Russie n'appellent pas le
+   * même zoom. `null` pour les entités sans géométrie.
+   */
+  readonly bounds: readonly [number, number, number, number] | null;
   /** Superficie en km², `null` si inconnue. */
   readonly area: number | null;
   readonly population: number | null;

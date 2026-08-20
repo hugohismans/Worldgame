@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { WORLD, boxAround, clampBox, initialBox, pathOf, project } from './projection.js';
+import {
+  MIN_WIDTH,
+  WORLD,
+  boxAround,
+  boxForBounds,
+  clampBox,
+  initialBox,
+  pathOf,
+  project,
+} from './projection.js';
 
 describe('projection', () => {
   it('place le méridien de Greenwich et l’équateur au centre', () => {
@@ -67,7 +76,8 @@ describe('cadrage', () => {
   });
 
   it('ne zoome pas indéfiniment', () => {
-    expect(clampBox({ x: 100, y: 100, width: 1, height: 1 }, 2).width).toBeGreaterThan(1);
+    // Le plancher descend très bas — il faut voir le Vatican — mais il existe.
+    expect(clampBox({ x: 100, y: 100, width: 0.00001, height: 0.00001 }, 2).width).toBe(MIN_WIDTH);
   });
 
   it('centre sur un point donné', () => {
@@ -80,5 +90,41 @@ describe('cadrage', () => {
     const box = boxAround(179, 89, 1800, 2);
     expect(box.x + box.width).toBeLessThanOrEqual(WORLD.width);
     expect(box.y).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('cadrage d’un pays', () => {
+  // Saint-Marin : 0,107° de large. La Russie : plus de 190°.
+  const SAINT_MARIN = [12.38563, 43.89206, 12.49239, 43.98257] as const;
+  const VATICAN = [12.45271, 41.90275, 12.45403, 41.90391] as const;
+  const RUSSIE = [-180, 41.19, 180, 81.85] as const;
+
+  it('serre le cadre sur un micro-État', () => {
+    const box = boxForBounds(SAINT_MARIN);
+    // Assez près pour que les frontières se voient : moins de 3° de large.
+    expect(box.width / 10).toBeLessThan(3);
+  });
+
+  it('descend jusqu’à voir le Vatican', () => {
+    const box = boxForBounds(VATICAN);
+    expect(box.width / 10).toBeLessThan(0.2);
+    expect(box.width).toBeGreaterThanOrEqual(MIN_WIDTH);
+  });
+
+  it('élargit le cadre sur un très grand pays', () => {
+    expect(boxForBounds(RUSSIE).width).toBe(WORLD.width);
+  });
+
+  it('tient compte de la hauteur, pas seulement de la largeur', () => {
+    // Un pays étroit mais très étiré du nord au sud doit tenir en entier.
+    const chili = [-75, -56, -66, -17] as const;
+    const box = boxForBounds(chili);
+    expect(box.height / 10).toBeGreaterThan(39);
+  });
+
+  it('reste dans le monde même au bord', () => {
+    const box = boxForBounds([-180, -55, -178, -53]);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(WORLD.width);
   });
 });

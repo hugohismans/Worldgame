@@ -7,6 +7,7 @@
     WORLD,
     WORLD_ASPECT,
     boxAround,
+    boxForBounds,
     clampBox,
     initialBox,
     pathOf,
@@ -34,6 +35,8 @@
   const markers = countryPoints.map((country) => ({
     iso3: country.iso3,
     position: project(country.center[0], country.center[1]),
+    /** Largeur réelle du pays, en unités de carte. */
+    span: country.bounds ? (country.bounds[2] - country.bounds[0]) * 10 : 0,
   }));
 
   const GRATICULE = { meridians: [-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150], parallels: [-60, -30, 0, 30, 60] };
@@ -44,11 +47,26 @@
   // qu'une bande verticale.
   let box = $state<Box>({ x: 0, y: 0, width: WORLD.width, height: WORLD.height });
   let hovered = $state<Iso3 | null>(null);
+  let viewport = $state({ width: 0, height: 0 });
   let hoverFromMouse = $state(!window.matchMedia('(hover: none), (pointer: coarse)').matches);
 
-  /** Rayon des marqueurs, constant à l'écran quel que soit le zoom. */
-  const markerRadius = $derived((box.width / WORLD.width) * 14);
-  const strokeWidth = $derived((box.width / WORLD.width) * 1.6);
+  /** Unités de carte par pixel d'écran : tout ce qui doit garder une taille
+      constante à l'écran se calcule à partir de là. */
+  const unitsPerPixel = $derived(
+    viewport.width === 0
+      ? 1
+      : 1 / Math.min(viewport.width / box.width, viewport.height / box.height),
+  );
+
+  const markerRadius = $derived(unitsPerPixel * 7);
+  const strokeWidth = $derived(unitsPerPixel * 0.9);
+
+  /**
+   * Un marqueur ne sert qu'à signaler un pays trop petit pour se voir. Dès que
+   * ses frontières font une dizaine de pixels, il s'efface et laisse la forme
+   * réelle apparaître.
+   */
+  const markerVisible = (span: number): boolean => span / unitsPerPixel < 14;
 
   function colorOf(iso3: Iso3, playable: boolean): string {
     const highlight = highlights?.get(iso3);
@@ -161,6 +179,16 @@
     zoomBy(event.deltaY > 0 ? 1.15 : 1 / 1.15, { x: event.clientX, y: event.clientY });
   }
 
+  // Suivre la taille de l'élément : les épaisseurs et les rayons en dépendent.
+  $effect(() => {
+    if (!svg) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) viewport = { width: entry.contentRect.width, height: entry.contentRect.height };
+    });
+    observer.observe(svg);
+    return () => observer.disconnect();
+  });
+
   // Cadrage de départ, une seule fois, quand on connaît la taille de l'écran.
   let framed = false;
   $effect(() => {
@@ -171,15 +199,34 @@
     box = initialBox(rect.width, rect.height);
   });
 
-  // Amène le pays attendu au centre, comme la rotation du globe.
+  /** Le cadrage du joueur avant une révélation, pour le lui rendre après. */
+  let boxBeforeFocus: Box | null = null;
+
+  // Amène le pays attendu au centre, cadré à sa taille, comme la rotation du
+  // globe. Au retour, on rend au joueur le cadrage qu'il avait choisi : sans
+  // ça, la question suivante démarrerait collée sur le pays précédent.
   $effect(() => {
     const iso3 = focus;
-    if (!iso3 || !svg) return;
+    if (!svg) return;
+    if (!iso3) {
+      const previous = boxBeforeFocus;
+      boxBeforeFocus = null;
+      if (previous) animateTo(previous);
+      return;
+    }
     const country = countryOf(iso3);
     if (!country) return;
-    const target = boxAround(country.center[0], country.center[1], WORLD.width / 4);
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) {
+    boxBeforeFocus = untrack(() => box);
+    // Cadré à la taille du pays : serré sur Saint-Marin, large sur la Russie.
+    animateTo(
+      country.bounds
+        ? boxForBounds(country.bounds)
+        : boxAround(country.center[0], country.center[1], WORLD.width / 4),
+    );
+  });
+
+  function animateTo(target: Box): void {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       box = target;
       return;
     }
@@ -200,7 +247,7 @@
       if (t < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
-  });
+  }
 
 
 </script>
@@ -251,20 +298,22 @@
   {/each}
 
   {#each markers as marker (marker.iso3)}
-    <circle
-      cx={marker.position[0]}
-      cy={marker.position[1]}
-      r={markerRadius}
-      fill={colorOf(marker.iso3, true) === GLOBE_COLORS.land
-        ? GLOBE_COLORS.marker
-        : colorOf(marker.iso3, true)}
-      stroke={GLOBE_COLORS.stroke}
-      stroke-width={strokeWidth}
-      onclick={() => select(marker.iso3)}
-      onpointerenter={() => setHover(marker.iso3)}
-      onpointerleave={() => setHover(null)}
-      role="presentation"
-    />
+    {#if markerVisible(marker.span)}
+      <circle
+        cx={marker.position[0]}
+        cy={marker.position[1]}
+        r={markerRadius}
+        fill={colorOf(marker.iso3, true) === GLOBE_COLORS.land
+          ? GLOBE_COLORS.marker
+          : colorOf(marker.iso3, true)}
+        stroke={GLOBE_COLORS.stroke}
+        stroke-width={strokeWidth}
+        onclick={() => select(marker.iso3)}
+        onpointerenter={() => setHover(marker.iso3)}
+        onpointerleave={() => setHover(null)}
+        role="presentation"
+      />
+    {/if}
   {/each}
 </svg>
 

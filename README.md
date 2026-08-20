@@ -85,8 +85,14 @@ voyage. Pour en ajouter une : une entrée dans la table, et `npm run build:data`
   attendue : un clic dessus est traité comme une erreur, sans planter.
 - **Polygone ou marqueur.** 29 membres de l'ONU n'existent pas à la résolution
   110m (Monaco, Malte, Singapour, Maldives, Bahreïn, les micro-États des Caraïbes
-  et du Pacifique…). Ils sont rendus comme marqueurs ponctuels cliquables
-  (`shape: 'point'`) plutôt qu'exclus du jeu.
+  et du Pacifique…). Leur géométrie est donc reprise du **1:10m**, à 5 décimales
+  près — Monaco fait 2 km de large et le Vatican 400 m, à 3 décimales leurs
+  frontières deviendraient un escalier. De loin ils restent signalés par un
+  marqueur (`shape: 'point'`), qui s'efface dès que leurs frontières font une
+  dizaine de pixels.
+- **Boîte englobante.** Chaque pays porte ses extrêmes (`bounds`), ce qui permet
+  de le cadrer à sa taille : la révélation zoome à 0,05° sur le Vatican et
+  montre le monde entier pour la Russie.
 - **L'Antarctique est retiré** de la géométrie : ni jouable, ni cliquable.
 - **Monnaies partagées.** Vingt-six pays ont l'euro, huit le franc CFA (BCEAO).
   Plutôt que d'écarter du jeu les monnaies les plus intéressantes, le mode
@@ -203,6 +209,11 @@ le sache.
 **Le globe n'est téléchargé que si on le choisit.** three.js représente
 l'essentiel du poids : en planisphère, la page fait 113 Ko compressés au lieu
 de 636 Ko.
+
+Le zoom descend jusqu'à 0,01° de large, de quoi voir la forme du Vatican. Au
+passage, les marqueurs des micro-États s'effacent au profit de leurs vraies
+frontières. Après une révélation, le cadrage du joueur lui est rendu tel qu'il
+l'avait laissé.
 
 Le cadrage de départ s'adapte à l'écran : le monde entier sur un écran large,
 plus rapproché sur un téléphone en portrait, où le monde entier tiendrait dans

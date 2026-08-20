@@ -46,8 +46,11 @@ export interface Box {
   readonly height: number;
 }
 
-/** Largeur minimale du cadre : au-delà, on zoome dans le vide. */
-export const MIN_WIDTH = WORLD.width / 14;
+/**
+ * Largeur minimale du cadre : 0,1 unité, soit 0,01° ou environ 1,1 km de large.
+ * Il faut aller jusque-là pour voir la forme du Vatican, qui mesure 400 m.
+ */
+export const MIN_WIDTH = 0.1;
 
 /**
  * Cadrage initial : on cherche à ce que la carte occupe environ 60 % de la
@@ -76,6 +79,23 @@ export function clampBox(box: Box, aspect: number = WORLD_ASPECT): Box {
     x: Math.min(WORLD.width - width, Math.max(0, box.x)),
     y: Math.min(WORLD.height - height, Math.max(0, box.y)),
   };
+}
+
+/**
+ * Le cadre qui montre un pays entier, avec de la marge autour. Un pays large
+ * est cadré large, un micro-État est cadré serré — c'est ce qui permet de voir
+ * la forme de Saint-Marin comme celle de la Russie.
+ */
+export function boxForBounds(
+  bounds: readonly [number, number, number, number],
+  aspect: number = WORLD_ASPECT,
+): Box {
+  const [west, south, east, north] = bounds;
+  const spanX = (east - west) * SCALE;
+  const spanY = (north - south) * SCALE;
+  // Trois fois la taille du pays : on le voit en entier, avec son voisinage.
+  const width = Math.max(spanX * 3, spanY * 3 * aspect, MIN_WIDTH * 6);
+  return boxAround((west + east) / 2, (south + north) / 2, width, aspect);
 }
 
 /** Le cadre centré sur un point, à une largeur donnée. */

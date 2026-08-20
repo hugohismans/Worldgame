@@ -1,6 +1,6 @@
 <script lang="ts">
   import { audio } from './lib/audio/audio.svelte.js';
-  import { countries } from './lib/data/countries.js';
+  import { countries, countryOf } from './lib/data/countries.js';
   import type { Country, Iso3 } from './lib/data/types.js';
   import type { Component } from 'svelte';
   import MapView from './lib/map/MapView.svelte';
@@ -24,6 +24,20 @@
 
   /** Temps d'affichage d'une bonne réponse avant la question suivante. */
   const CORRECT_PAUSE_MS = 900;
+
+  /**
+   * Une bonne réponse sur un pays minuscule mérite qu'on s'y arrête : le globe
+   * ou la carte s'en approchent, et on laisse le temps de voir sa forme.
+   */
+  const CORRECT_PAUSE_TINY_MS = 2200;
+
+  /** En deçà de cette largeur, un pays ne se voit pas sans zoomer (en degrés). */
+  const TINY_SPAN = 2;
+
+  const isTiny = (iso3: Iso3): boolean => {
+    const bounds = countryOf(iso3)?.bounds;
+    return bounds ? bounds[2] - bounds[0] < TINY_SPAN && bounds[3] - bounds[1] < TINY_SPAN : false;
+  };
 
   type Screen = 'home' | 'playing' | 'result';
 
@@ -52,6 +66,17 @@
   }
 
   const question = $derived(reveal?.question ?? (round ? currentQuestion(round) : undefined));
+
+  /**
+   * Le pays sur lequel se recentrer : toujours après une erreur, et aussi
+   * après une bonne réponse quand le pays est trop petit pour qu'on ait vu sa
+   * forme — c'est là qu'on apprend à quoi ressemble Saint-Marin.
+   */
+  const focused = $derived(
+    reveal && (!reveal.correct || isTiny(reveal.question.answer))
+      ? reveal.question.answer
+      : null,
+  );
 
   const highlights = $derived.by(() => {
     const map = new Map<Iso3, Highlight>();
@@ -86,7 +111,12 @@
     audio.play(correct ? 'correct' : 'wrong', currentStreak(round));
     // Une bonne réponse s'enchaîne toute seule ; une erreur attend le joueur,
     // le temps qu'il regarde où était le pays.
-    if (correct) pending = setTimeout(advance, CORRECT_PAUSE_MS);
+    if (correct) {
+      pending = setTimeout(
+        advance,
+        isTiny(asked.answer) ? CORRECT_PAUSE_TINY_MS : CORRECT_PAUSE_MS,
+      );
+    }
   }
 
   /** Le joueur renonce : on lui montre la réponse, elle compte comme ratée. */
@@ -145,14 +175,14 @@
     <MapView
       onselect={select}
       {highlights}
-      focus={reveal && !reveal.correct ? reveal.question.answer : null}
+      focus={focused}
       selectable={screen === 'playing' && reveal === null}
     />
   {:else if GlobeView}
     <GlobeView
       onselect={select}
       {highlights}
-      focus={reveal && !reveal.correct ? reveal.question.answer : null}
+      focus={focused}
       selectable={screen === 'playing' && reveal === null}
     />
   {/if}
